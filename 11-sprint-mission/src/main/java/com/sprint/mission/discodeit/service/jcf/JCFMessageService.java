@@ -34,7 +34,6 @@ public class JCFMessageService implements MessageService {
         }
 
         Message message = new Message(sender, channel, content);
-
         data.add(message);
 
         return message;
