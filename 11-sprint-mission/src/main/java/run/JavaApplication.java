@@ -14,7 +14,7 @@ public class JavaApplication {
     public static void main(String[] args) {
         UserService userService = new JCFUserService();
         ChannelService channelService = new JCFChannelService();
-        MessageService messageService = new JCFMessageService();
+        MessageService messageService = new JCFMessageService(userService, channelService);
         //유저 도메인 테스트
         //유저 등록
         User user1 = userService.create("김바다", "bada@ocean.com");
@@ -57,10 +57,10 @@ public class JavaApplication {
 
         // 채널 이름 수정
         System.out.println("=== 채널 이름 수정 ===");
-        channelService.update(channel2.getId(), "2026 단체방");
+        channelService.update(channel1.getId(), "2026 단체방");
         // 바뀐 채널 이름 조회
         System.out.println("=== 채널 조희 ===");
-        System.out.println(channelService.findById(channel2.getId()));
+        System.out.println(channelService.findById(channel1.getId()));
         // 채널 삭제
         System.out.println("=== 채널 삭제 ===");
         channelService.delete(channel1.getId());
