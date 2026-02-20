@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class Message extends AbstractEntity {
+public class Message extends AbstractEntity implements Serializable {
+    private static final long serialVersionUID = 2001L;
     private final User sender;
     private final Channel channel;
     private String content;
