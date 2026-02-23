@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
+import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
@@ -51,23 +54,28 @@ public class JavaApplication {
         MessageService messageService = new FileMessageService(userService, channelService);
         */
 
-        //jcf repository 초기화
+        /*jcf repository 초기화
         UserRepository userRepository = new JCFUserRepository();
         ChannelRepository channelRepository = new JCFChannelRepository();
         MessageRepository messageRepository = new JCFMessageRepository();
+*/
+        //FileIO repository 초기화
+        UserRepository userRepository = new FileUserRepository();
+        ChannelRepository channelRepository = new FileChannelRepository();
+        MessageRepository messageRepository = new FileMessageRepository();
 
-        //BasicService 구현체 초기화 - jcf
+        //BasicService 구현체 초기화
         UserService userService = new BasicUserService(userRepository);
         ChannelService channelService = new BasicChannelService(channelRepository);
         MessageService messageService = new BasicMessageService(messageRepository, userService, channelService);
 
         // 셋업
         User user = setupUser(userService);
-        User user2 = userService.create("신성민", "Seosung@min.com");
         Channel channel = setupChannel(channelService);
-        Channel msgChannel = channelService.create(ChannelType.PRIVATE, "테스트채널", "테스트채널입니다.");
+
 
         // 테스트
+        Message msg1 = messageService.create("테스트", channel.getId(), user.getId());
         messageCreateTest(messageService, channel, user);
 
         //유저 다건 조회
@@ -84,14 +92,6 @@ public class JavaApplication {
         System.out.println("=== 유저 조회 ===");
         System.out.println(userService.findById(user.getId()));
 
-        //유저 삭제
-        System.out.println("=== 유저 삭제 ===");
-        userService.delete(user.getId());
-
-        System.out.println("=== 삭제 후 모든 유저 목록 ===");
-        for (User u : userService.findAll()) {
-            System.out.println(u.getUserName());
-        }
 
 
         //채널 다건 조회
@@ -106,17 +106,7 @@ public class JavaApplication {
         // 바뀐 채널 이름 조회
         System.out.println("=== 채널 조희 ===");
         System.out.println(channelService.findById(channel.getId()));
-        // 채널 삭제
-        System.out.println("=== 채널 삭제 ===");
-        channelService.delete(channel.getId());
-        //채널 전체 조회
-        System.out.println("=== 전체 채널 조회 ===");
-        for (Channel c : channelService.findAll()) {
-            System.out.println(c.getChannelName());
-        }
-        //메시지 도메인 테스트
-        Message msg1 = messageService.create("수정할메시지", msgChannel.getId(), user2.getId());
-        Message msg2 = messageService.create("신성민입니다", msgChannel.getId(), user2.getId());
+
 
         //메시지 다건 조회
         System.out.println("=== 전체 보낸 메시지 목록 ===");
@@ -132,13 +122,33 @@ public class JavaApplication {
         System.out.println("=== 수정된 메시지 조희 ===");
         System.out.println(messageService.findById(msg1.getId()));
 
+
+
         // 메시지 삭제
         System.out.println("=== 메시지 삭제 ===");
-        messageService.delete(msg2.getId());
+        messageService.delete(msg1.getId());
         // 보낸 메시지 전체 조회
         System.out.println("=== 보낸 메시지 조회 ===");
         for (Message m : messageService.findAll()) {
             System.out.println(m.getContent());
+        }
+
+        // 채널 삭제
+        System.out.println("=== 채널 삭제 ===");
+        channelService.delete(channel.getId());
+        //채널 전체 조회
+        System.out.println("=== 전체 채널 조회 ===");
+        for (Channel c : channelService.findAll()) {
+            System.out.println(c.getChannelName());
+        }
+
+        //유저 삭제
+        System.out.println("=== 유저 삭제 ===");
+        userService.delete(user.getId());
+
+        System.out.println("=== 삭제 후 모든 유저 목록 ===");
+        for (User u : userService.findAll()) {
+            System.out.println(u.getUserName());
         }
 
     }
