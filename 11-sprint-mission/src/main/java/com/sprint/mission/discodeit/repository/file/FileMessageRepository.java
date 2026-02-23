@@ -21,7 +21,11 @@ public class FileMessageRepository implements MessageRepository {
     //create
     @Override
     public Message save(Message message) {
-        //메시지는 중복되어도 됨
+        Message existing = findById(message.getId());
+
+        if (existing != null) {
+            data.remove(existing); // 기존 객체 제거
+        }
         data.add(message);
         saveToFile();
 

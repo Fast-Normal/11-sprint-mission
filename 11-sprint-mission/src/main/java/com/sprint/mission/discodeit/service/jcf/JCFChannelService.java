@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.ArrayList;
@@ -16,8 +17,8 @@ public class JCFChannelService implements ChannelService {
 
     //create
     @Override
-    public Channel create(String channelName) {
-        Channel channel = new Channel(channelName);
+    public Channel create(ChannelType type, String channelName, String description) {
+        Channel channel = new Channel(type, channelName, description);
 
         data.add(channel);
 

@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class JCFChannelRepository implements ChannelRepository {
     //save
     @Override
     public Channel save(Channel channel) {
+        data.removeIf(c -> c.getId().equals(channel.getId()));
         data.add(channel);
         return channel;
     }
