@@ -18,6 +18,7 @@ public class JCFUserRepository implements UserRepository {
     //save
     @Override
     public User save(User user){
+        data.removeIf(u -> u.getId().equals(user.getId()));
         data.add(user);
         return user;
     }

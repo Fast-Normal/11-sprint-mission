@@ -24,16 +24,19 @@ public class JCFMessageService implements MessageService {
 
     //create
     @Override
-    public Message create(User sender, String content, Channel channel) {
-        if (sender == null || userService.findById(sender.getId()) == null) {
-            return null;
+    public Message create(String content, UUID authorId, UUID channelId) {
+        User author = userService.findById(authorId);
+        Channel channel = channelService.findById(channelId);
+        if (author == null || channel == null) {
+            throw new IllegalArgumentException("Invalid author/channel");
         }
 
-        if (channel == null || channelService.findById(channel.getId()) == null) {
-            return null;
+        if (content == null  || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid content");
         }
 
-        Message message = new Message(sender, channel, content);
+        Message message = new Message(author,channel, content);
+
         data.add(message);
 
         return message;

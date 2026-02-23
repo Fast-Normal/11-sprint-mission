@@ -28,20 +28,18 @@ public class FileMessageService implements MessageService {
 
     //create
     @Override
-    public Message create(User sender, String content, Channel channel) {
-        if (sender == null || userService.findById(sender.getId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 사용자");
-        }
-
-        if (channel == null || channelService.findById(channel.getId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널");
+    public Message create(String content, UUID authorId, UUID channelId) {
+        User author = userService.findById(authorId);
+        Channel channel = channelService.findById(channelId);
+        if (author == null || channel == null) {
+            throw new IllegalArgumentException("Invalid author/channel");
         }
 
         if (content == null  || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
+            throw new IllegalArgumentException("Invalid content");
         }
 
-        Message message = new Message(sender, channel, content);
+        Message message = new Message(author,channel, content);
 
         data.add(message);
         saveToFile();

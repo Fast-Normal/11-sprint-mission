@@ -21,6 +21,12 @@ public class JCFMessageRepository implements MessageRepository {
     //save
     @Override
     public Message save(Message message) {
+        Message existing = findById(message.getId());
+
+        if (existing != null) {
+            data.remove(existing);
+        }
+
         data.add(message);
         return message;
     }

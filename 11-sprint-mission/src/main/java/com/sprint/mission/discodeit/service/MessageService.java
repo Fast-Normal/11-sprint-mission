@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface MessageService {
 
     //create
-    Message create(User sender, String content, Channel channel);
+    Message create(String content, UUID channelId, UUID authorId);
     //read
     Message findById(UUID messageId);
     //readAll
