@@ -20,7 +20,11 @@ public class FileUserRepository implements UserRepository {
     // save
     @Override
     public User save(User user) {
+        // 중복 id 데이터 덮어쓰기
+        data.removeIf(u -> u.getId().equals(user.getId()));
+        // 데이터 입력
         data.add(user);
+        // 저장
         saveToFile();
         return user;
     }
