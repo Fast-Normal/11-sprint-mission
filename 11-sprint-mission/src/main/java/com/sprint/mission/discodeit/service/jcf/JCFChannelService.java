@@ -2,63 +2,51 @@ package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class JCFChannelService implements ChannelService {
-    private final List<Channel> data;
+    private final JCFChannelRepository channelRepository;
 
-    public JCFChannelService() {
-        this.data = new ArrayList<>();
+    public JCFChannelService(JCFChannelRepository channelRepository) {
+        this.channelRepository = channelRepository;
     }
 
     //create
     @Override
     public Channel create(ChannelType type, String channelName, String description) {
         Channel channel = new Channel(type, channelName, description);
-
-        data.add(channel);
-
-        return channel;
+        return channelRepository.save(channel);
     }
 
     //read
     @Override
     public Channel findById(UUID channelId){
-        for (Channel c : data) {
-            if (c.getId().equals(channelId)) {
-                return c;
-            }
-        } return null;
+        return channelRepository.findById(channelId);
     }
     //readAll
     @Override
     public List<Channel> findAll(){
-        return new ArrayList<>(data);
+        return channelRepository.findAll();
     }
 
     //update
     @Override
     public Channel update(UUID channelId, String newChannelName){
-        for (Channel c : data) {
-            if (c.getId().equals(channelId)) {
-                c.updateChannelName(newChannelName);
-                return c;
-            }
-        } return null;
+        Channel channel = channelRepository.findById(channelId);
+        if (channel == null) {
+            return null;
+        }
+        channel.updateChannelName(newChannelName);
+        return channelRepository.save(channel);
     }
 
     //delete
     @Override
     public void delete(UUID channelId){
-        for (int i = 0 ; i < data.size() ; i++) {
-            if (data.get(i).getId().equals(channelId)) {
-                data.remove(i);
-                return;
-            }
-        }
+        channelRepository.delete(channelId);
     }
 }

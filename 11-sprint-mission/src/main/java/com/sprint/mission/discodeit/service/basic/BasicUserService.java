@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +17,9 @@ public class BasicUserService implements UserService {
     //create
     @Override
     public User create(String userName, String userEmail){
+        if (userRepository.existByEmail(userEmail)) {
+            throw new IllegalArgumentException("중복된 이메일입니다.");
+        }
         User user = new User(userName, userEmail);
         return userRepository.save(user);
     }

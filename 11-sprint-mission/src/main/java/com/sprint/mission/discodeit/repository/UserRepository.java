@@ -14,4 +14,6 @@ public interface UserRepository {
 
     void delete(UUID id);
 
+    boolean existByEmail(String userEmail);
+
 }

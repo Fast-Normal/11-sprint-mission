@@ -52,6 +52,10 @@ public class BasicMessageService implements MessageService {
     //update
     @Override
     public Message update(UUID messageId, String newContent){
+        if (newContent == null || newContent.trim().isEmpty()) {
+            throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
+        }
+
         Message msg = messageRepository.findById(messageId);
         if (msg == null) {
             return null;

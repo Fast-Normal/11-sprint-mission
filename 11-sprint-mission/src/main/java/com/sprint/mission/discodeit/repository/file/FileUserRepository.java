@@ -53,6 +53,17 @@ public class FileUserRepository implements UserRepository {
         saveToFile();
     }
 
+    // 이메일 조회
+    @Override
+    public boolean existByEmail(String userEmail) {
+        for ( User u : data) {
+            if (u.getUserEmail().equals(userEmail)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     //파일 저장
     private void saveToFile() {

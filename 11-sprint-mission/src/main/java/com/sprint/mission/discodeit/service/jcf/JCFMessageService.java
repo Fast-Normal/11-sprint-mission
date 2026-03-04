@@ -3,21 +3,21 @@ package com.sprint.mission.discodeit.service.jcf;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class JCFMessageService implements MessageService {
-    private final List<Message> data;
+    private final JCFMessageRepository messageRepository;
     private final UserService userService;
     private final ChannelService channelService;
 
-    public JCFMessageService(UserService userService, ChannelService channelService) {
-        this.data = new ArrayList<>();
+    public JCFMessageService(JCFMessageRepository messageRepository, UserService userService, ChannelService channelService) {
+        this.messageRepository = messageRepository;
         this.userService = userService;
         this.channelService = channelService;
     }
@@ -36,45 +36,37 @@ public class JCFMessageService implements MessageService {
         }
 
         Message message = new Message(author,channel, content);
-
-        data.add(message);
-
-        return message;
+        return messageRepository.save(message);
     }
     //read
     @Override
     public Message findById(UUID messageId){
-        for (Message m : data) {
-            if (m.getId().equals(messageId)) {
-                return m;
-            }
-        } return null;
+        return messageRepository.findById(messageId);
     }
     //readAll
     @Override
     public List<Message> findAll(){
-        return new ArrayList<>(data);
+        return messageRepository.findAll();
     }
 
     //update
     @Override
     public Message update(UUID messageId, String newContent){
-        for (Message m : data) {
-            if (m.getId().equals(messageId)) {
-                m.updateContent(newContent);
-                return m;
-            }
-        } return null;
+        if (newContent == null || newContent.trim().isEmpty()) {
+            throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
+        }
+
+        Message msg = messageRepository.findById(messageId);
+        if (msg == null) {
+            return null;
+        }
+        msg.updateContent(newContent);
+        return messageRepository.save(msg);
     }
 
     //delete
     @Override
     public void delete(UUID messageId){
-        for (int i = 0 ; i < data.size() ; i++) {
-            if (data.get(i).getId().equals(messageId)) {
-                data.remove(i);
-                return;
-            }
-        }
+        messageRepository.delete(messageId);
     }
 }

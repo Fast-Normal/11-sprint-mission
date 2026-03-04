@@ -1,66 +1,56 @@
 package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class JCFUserService implements UserService {
-    private final List<User> data;
+    private final JCFUserRepository userRepository;
 
-    public JCFUserService() {
-        this.data = new ArrayList<>();
+    public JCFUserService(JCFUserRepository userRepository) {
+        this.userRepository = userRepository;
     }
+
     //create
     @Override
     public User create(String userName, String userEmail){
+        if (userRepository.existByEmail(userEmail)) {
+            throw new IllegalArgumentException("중복된 이메일입니다");
+        }
         User user = new User(userName, userEmail);
-
-        data.add(user);
-
-        return user;
+        return userRepository.save(user);
     }
 
     //Read
     @Override
     public User findById(UUID userId){
-        for (User user : data) {
-            if (user.getId().equals(userId)) {
-                return user;
-            }
-        }
-        return null;
+        return userRepository.findById(userId);
     }
 
     //Read all
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(data);
+        return userRepository.findAll();
     }
 
     //Update
     @Override
     public User update(UUID userId, String newUserName, String newUserEmail){
-        for (User user : data) {
-            if (user.getId().equals(userId)) {
-                user.updateUserName(newUserName);
-                user.updateUserEmail(newUserEmail);
-                return user;
-            }
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            return null;
         }
-        return null;
+        user.updateUserName(newUserName);
+        user.updateUserEmail(newUserEmail);
+        return userRepository.save(user);
     }
 
     //Delete
     @Override
     public void delete(UUID userId){
-        for (int i = 0 ; i < data.size() ; i++) {
-            if (data.get(i).getId().equals(userId)) {
-                data.remove(i);
-                return;
-            }
-        }
+        userRepository.delete(userId);
     }
 }
