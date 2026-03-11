@@ -1,89 +1,114 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class FileUserRepository implements UserRepository {
 
-    private final List<User> data;
-    private final File file = new File("users.dat");
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
     public FileUserRepository() {
-        this.data = loadFromFile();
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", Channel.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private Path resolvePath(UUID id) {
+        return DIRECTORY.resolve(id + EXTENSION);
     }
 
     // save
     @Override
     public User save(User user) {
-        // 중복 id 데이터 덮어쓰기
-        data.removeIf(u -> u.getId().equals(user.getId()));
-        // 데이터 입력
-        data.add(user);
-        // 저장
-        saveToFile();
+        Path path = resolvePath(user.getId());
+        try (FileOutputStream fos = new FileOutputStream(path.toFile());
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+        ) {
+            oos.writeObject(user);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return user;
     }
 
     // read
     @Override
-    public User findById(UUID userId) {
-        for (User user : data) {
-            if (user.getId().equals(userId)) {
-                return user;
+    public Optional<User> findById(UUID userId) {
+        Path path = resolvePath(userId);
+        User userNullable = null;
+
+        if(Files.exists(path)) {
+            try (FileInputStream fis = new FileInputStream(path.toFile());
+                ObjectInputStream ois = new ObjectInputStream(fis);
+            ) {
+                userNullable = (User) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
-        return null;
+        return Optional.ofNullable(userNullable);
     }
 
     // read all
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(data);
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis);
+                                ) {
+                            return (User) ois.readObject();
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // delete
     @Override
     public void delete(UUID userId) {
-        data.removeIf(u -> u.getId().equals(userId));
-        saveToFile();
+        Path path = resolvePath(userId);
+        try {
+            Files.delete(path);
+        } catch (IOException e){
+            throw new RuntimeException(e);
+        }
     }
 
     // 이메일 조회
     @Override
     public boolean existByEmail(String userEmail) {
-        for ( User u : data) {
-            if (u.getUserEmail().equals(userEmail)) {
-                return true;
-            }
-        }
-        return false;
+        return findAll().stream()
+                .anyMatch(user -> user.getUserEmail().equals(userEmail));
     }
 
-
-    //파일 저장
-    private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            oos.writeObject(data);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    //파일 로드
-    private List<User> loadFromFile() {
-        if (!file.exists()) {
-            return new ArrayList<>();
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            return (List<User>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    // existsById
+    @Override
+    public boolean existsById(UUID id) {
+        Path path = resolvePath(id);
+        return Files.exists(path);
     }
 }

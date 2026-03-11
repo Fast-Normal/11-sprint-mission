@@ -1,81 +1,103 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class FileMessageRepository implements MessageRepository {
 
-    private final List<Message> data;
-
-    private final File file = new File("messages.dat");
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
     public FileMessageRepository() {
-        this.data = loadFromFile();
+        this.DIRECTORY = Paths.get(System.getProperty("message.dir"), "file-data-map", Channel.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private Path resolvePath(UUID id) {
+        return DIRECTORY.resolve(id + EXTENSION);
     }
 
     //create
     @Override
     public Message save(Message message) {
-        Message existing = findById(message.getId());
 
-        if (existing != null) {
-            data.remove(existing); // 기존 객체 제거
+        Path path = resolvePath(message.getId());
+        try (
+                FileOutputStream fos = new FileOutputStream(path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(fos)
+        ) {
+            oos.writeObject(message);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        data.add(message);
-        saveToFile();
-
         return message;
     }
 
     //read
     @Override
-    public Message findById(UUID messageId){
-        for (Message m : data) {
-            if (m.getId().equals(messageId)) {
-                return m;
+    public Optional<Message> findById(UUID messageId){
+        Path path = resolvePath(messageId);
+        Message messageNullable = null;
+
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile());
+                    ObjectInputStream ois = new ObjectInputStream(fis)
+            ) {
+                messageNullable = (Message) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
-        } return null;
+        }
+        return Optional.ofNullable(messageNullable);
     }
     //readAll
     @Override
     public List<Message> findAll(){
-        return new ArrayList<>(data);
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis)
+                        ) {
+                            return (Message) ois.readObject();
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
     //delete
     @Override
     public void delete(UUID messageId) {
-        data.removeIf(m -> m.getId().equals(messageId));
-        saveToFile();
-    }
-
-    // 파일 저장
-    private void saveToFile() {
-        try (ObjectOutputStream oos
-                     = new ObjectOutputStream(new FileOutputStream(file))) {
-            oos.writeObject(data);
+        Path path = resolvePath(messageId);
+        try {
+            Files.delete(path);
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 파일 로드
-    private List<Message> loadFromFile() {
-        if (!file.exists()) {
-            return new ArrayList<>();
-        }
-        try (ObjectInputStream ois
-                     = new ObjectInputStream(new FileInputStream(file))) {
-            return (List<Message>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+            throw new RuntimeException(e);
         }
     }
 }

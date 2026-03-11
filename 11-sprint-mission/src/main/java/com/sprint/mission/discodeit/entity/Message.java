@@ -5,23 +5,23 @@ import java.util.UUID;
 
 public class Message extends AbstractEntity {
 
-    private final User sender;
-    private final Channel channel;
+    private final UUID authorId;
+    private final UUID channelId;
     private String content;
 
-    public Message(User sender, Channel channel, String content) {
+    public Message(UUID authorId, UUID channelId, String content) {
         super();
-        this.sender = sender;
-        this.channel = channel;
+        this.authorId = authorId;
+        this.channelId = channelId;
         this.content = content;
     }
 
-    public User getSender() {
-        return sender;
+    public UUID getAuthorId() {
+        return authorId;
     }
 
-    public Channel getChannel() {
-        return channel;
+    public UUID getChannelId() {
+        return channelId;
     }
 
     public String getContent() {
@@ -34,6 +34,6 @@ public class Message extends AbstractEntity {
     }
 
     public String toString() {
-        return sender + "이(가) " + channel + " 채널에서 \"" + content + "\"의 메시지를 보냄";
+        return "authorId: " + authorId + ", channelId:" + channelId + ", content: " + content  ;
     }
 }

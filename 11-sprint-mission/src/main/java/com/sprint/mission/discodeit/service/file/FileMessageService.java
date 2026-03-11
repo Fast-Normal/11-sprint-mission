@@ -3,6 +3,8 @@ package com.sprint.mission.discodeit.service.file;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
@@ -10,17 +12,18 @@ import com.sprint.mission.discodeit.service.UserService;
 
 import java.io.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class FileMessageService implements MessageService {
 
     private final FileMessageRepository messageRepository;
-    private final UserService userService;
-    private final ChannelService channelService;
+    private final UserRepository userRepository;
+    private final ChannelRepository channelRepository;
 
-   public FileMessageService(FileMessageRepository messageRepository, UserService userService, ChannelService channelService) {
-       this.userService = userService;
-       this.channelService = channelService;
+   public FileMessageService(FileMessageRepository messageRepository, UserRepository userRepository, ChannelRepository channelRepository) {
+       this.userRepository = userRepository;
+       this.channelRepository = channelRepository;
        this.messageRepository = messageRepository;
    }
 
@@ -28,17 +31,15 @@ public class FileMessageService implements MessageService {
     //create
     @Override
     public Message create(String content, UUID authorId, UUID channelId) {
-        User author = userService.findById(authorId);
-        Channel channel = channelService.findById(channelId);
-        if (author == null || channel == null) {
-            throw new IllegalArgumentException("Invalid author/channel");
+        if (!userRepository.existsById(authorId)) {
+            throw new IllegalArgumentException("Invalid author");
         }
 
-        if (content == null  || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invalid content");
+        if (!channelRepository.existsById(channelId)) {
+            throw new IllegalArgumentException("Invalid channel");
         }
 
-        Message message = new Message(author,channel, content);
+        Message message = new Message(authorId,channelId, content);
 
         return messageRepository.save(message);
     }
@@ -46,7 +47,8 @@ public class FileMessageService implements MessageService {
     //read
     @Override
     public Message findById(UUID messageId){
-        return messageRepository.findById(messageId);
+        return messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException(("메시지를 찾을 수 없습니다")));
     }
     //readAll
     @Override
@@ -61,10 +63,9 @@ public class FileMessageService implements MessageService {
             throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
         }
 
-        Message msg = messageRepository.findById(messageId);
-        if (msg == null) {
-            return null;
-        }
+        Message msg = messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("메시지를 찾을 수 없습니다"));
+
         msg.updateContent(newContent);
         return messageRepository.save(msg);
     }

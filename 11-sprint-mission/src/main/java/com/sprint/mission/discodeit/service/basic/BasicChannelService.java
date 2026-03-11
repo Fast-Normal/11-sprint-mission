@@ -27,7 +27,8 @@ public class BasicChannelService implements ChannelService {
     //read
     @Override
     public Channel findById(UUID channelId){
-        return channelRepository.findById(channelId);
+        return channelRepository.findById(channelId)
+                .orElseThrow(() -> new IllegalArgumentException("채널을 찾을 수 없습니다."));
     }
 
     //readAll
@@ -39,10 +40,9 @@ public class BasicChannelService implements ChannelService {
     //update
     @Override
     public Channel update(UUID channelId, String newChannelName){
-        Channel channel = channelRepository.findById(channelId);
-        if (channel == null) {
-            return null;
-        }
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new IllegalArgumentException("채널을 찾을 수 없습니다."));
+
         channel.updateChannelName(newChannelName);
         return channelRepository.save(channel);
     }

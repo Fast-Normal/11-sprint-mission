@@ -1,58 +1,53 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class JCFUserRepository implements UserRepository {
 
-    private final List<User> data;
+    private final Map<UUID, User> data;
 
     public JCFUserRepository() {
-        this.data = new ArrayList<>();
+        this.data = new HashMap<>();
     }
 
     //save
     @Override
     public User save(User user){
-        data.removeIf(u -> u.getId().equals(user.getId()));
-        data.add(user);
+        data.put(user.getId(), user);
         return user;
     }
 
     //Read
     @Override
-    public User findById(UUID id){
-        for (User user : data) {
-            if (user.getId().equals(id)) {
-                return user;
-            }
-        }
-        return null;
+    public Optional<User> findById(UUID id){
+        return Optional.ofNullable(data.get(id));
     }
 
     //Read all
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(data);
+        return new ArrayList<>(data.values());
     }
 
     //Delete
     @Override
     public void delete(UUID id){
-        data.removeIf(u -> u.getId().equals(id));
+        data.remove(id);
     }
 
     @Override
     public boolean existByEmail(String userEmail) {
-        for ( User u : data) {
-            if (u.getUserEmail().equals(userEmail)) {
-                return true;
-            }
-        }
-        return false;
+        return data.values().stream()
+                .anyMatch(user -> user.getUserEmail().equals(userEmail));
     }
+
+    // existsById
+    @Override
+    public boolean existsById(UUID id) {
+        return data.containsKey(id);
+}
 }

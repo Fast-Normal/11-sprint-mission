@@ -27,7 +27,8 @@ public class BasicUserService implements UserService {
     //Read
     @Override
     public User findById(UUID userId){
-        return userRepository.findById(userId);
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
     }
 
     //Read all
@@ -39,10 +40,9 @@ public class BasicUserService implements UserService {
     //Update
     @Override
     public User update(UUID userId, String newUserName, String newUserEmail){
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            return null;
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
         user.updateUserName(newUserName);
         user.updateUserEmail(newUserEmail);
         return userRepository.save(user);
