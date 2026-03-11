@@ -3,8 +3,8 @@ package com.sprint.mission.discodeit.entity;
 import java.io.*;
 import java.util.UUID;
 
-public class User extends AbstractEntity implements Serializable{
-    private static final long serialVersionUID = 1001L;
+public class User extends AbstractEntity{
+
     private String userName;
     private String userEmail;
 

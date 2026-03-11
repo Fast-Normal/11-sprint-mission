@@ -3,8 +3,8 @@ package com.sprint.mission.discodeit.entity;
 import java.io.Serializable;
 import java.util.UUID;
 
-public class Channel extends AbstractEntity implements Serializable {
-    private static final long serialVersionUID = 3001L;
+public class Channel extends AbstractEntity {
+
     private String channelName;
     private ChannelType type;
     private String description;
