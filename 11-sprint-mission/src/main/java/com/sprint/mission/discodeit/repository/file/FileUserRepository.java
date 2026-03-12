@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
@@ -8,10 +7,10 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class FileUserRepository implements UserRepository {
 
@@ -19,7 +18,7 @@ public class FileUserRepository implements UserRepository {
     private final String EXTENSION = ".ser";
 
     public FileUserRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", Channel.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", User.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);
@@ -38,7 +37,7 @@ public class FileUserRepository implements UserRepository {
     public User save(User user) {
         Path path = resolvePath(user.getId());
         try (FileOutputStream fos = new FileOutputStream(path.toFile());
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            ObjectOutputStream oos = new ObjectOutputStream(fos)
         ) {
             oos.writeObject(user);
         } catch (IOException e) {
@@ -55,7 +54,7 @@ public class FileUserRepository implements UserRepository {
 
         if(Files.exists(path)) {
             try (FileInputStream fis = new FileInputStream(path.toFile());
-                ObjectInputStream ois = new ObjectInputStream(fis);
+                ObjectInputStream ois = new ObjectInputStream(fis)
             ) {
                 userNullable = (User) ois.readObject();
             } catch (IOException | ClassNotFoundException e) {
@@ -68,13 +67,13 @@ public class FileUserRepository implements UserRepository {
     // read all
     @Override
     public List<User> findAll() {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths = Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
                                 FileInputStream fis = new FileInputStream(path.toFile());
-                                ObjectInputStream ois = new ObjectInputStream(fis);
+                                ObjectInputStream ois = new ObjectInputStream(fis)
                                 ) {
                             return (User) ois.readObject();
                         } catch (IOException | ClassNotFoundException e) {

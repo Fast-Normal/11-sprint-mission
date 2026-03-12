@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
@@ -8,10 +7,10 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class FileMessageRepository implements MessageRepository {
 
@@ -19,7 +18,7 @@ public class FileMessageRepository implements MessageRepository {
     private final String EXTENSION = ".ser";
 
     public FileMessageRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("message.dir"), "file-data-map", Channel.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", Message.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);
@@ -70,8 +69,8 @@ public class FileMessageRepository implements MessageRepository {
     //readAll
     @Override
     public List<Message> findAll(){
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths = Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
