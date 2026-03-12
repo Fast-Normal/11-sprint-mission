@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.UUID;
 
+@Getter
 public class Channel extends AbstractEntity {
 
     private String channelName;
@@ -21,20 +24,8 @@ public class Channel extends AbstractEntity {
         timeUpdated();
     }
 
-    public String getChannelName() {
-        return channelName;
-    }
-
-    public ChannelType getType() {
-        return type;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
     public String toString() {
-        return "[채널 이름: " + channelName + "]";
+        return "channelName: " + channelName + ", type: " + type + ", description: " + description;
     }
 
 

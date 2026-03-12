@@ -1,17 +1,23 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.*;
 import java.util.UUID;
 
+@Getter
 public class User extends AbstractEntity{
 
     private String userName;
     private String userEmail;
+    private UUID profileId;
 
     public User(String userName, String userEmail) {
         super();
         this.userName = userName;
         this.userEmail = userEmail;
+        this.profileId = null;
+
     }
 
     public void updateUserName(String userName) {
@@ -24,16 +30,13 @@ public class User extends AbstractEntity{
         timeUpdated();
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getUserEmail() {
-        return userEmail;
+    public void updateUserProfile(UUID profileId) {
+        this.profileId = profileId;
+        timeUpdated();
     }
 
     public String toString() {
-        return "[유저 이름: " + userName + ", 유저 이메일: " + userEmail + "]";
+        return "userName: " + userName + ", userEmail: " + userEmail;
     }
 }
 
