@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
 
-import java.io.*;
 import java.util.UUID;
 
 @Getter
@@ -10,13 +9,15 @@ public class User extends AbstractEntity{
 
     private String userName;
     private String userEmail;
+    private String password;
     private UUID profileId;
 
-    public User(String userName, String userEmail) {
+    public User(String userName, String userEmail, String password, UUID profileId) {
         super();
         this.userName = userName;
         this.userEmail = userEmail;
-        this.profileId = null;
+        this.password = password;
+        this.profileId = profileId;
 
     }
 
@@ -32,6 +33,11 @@ public class User extends AbstractEntity{
 
     public void updateUserProfile(UUID profileId) {
         this.profileId = profileId;
+        timeUpdated();
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
         timeUpdated();
     }
 

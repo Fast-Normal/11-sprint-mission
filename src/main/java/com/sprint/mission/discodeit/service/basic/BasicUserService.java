@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
@@ -14,14 +16,26 @@ import java.util.UUID;
 public class BasicUserService implements UserService {
     private final UserRepository userRepository;
 
+    private UserDto toDto(User user) {
+        return new UserDto(
+                user.getId(),
+                user.getUserName(),
+                user.getUserEmail(),
+                user.getProfileId(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
+    }
+
     //create
     @Override
-    public User create(String userName, String userEmail){
-        if (userRepository.existByEmail(userEmail)) {
-            throw new IllegalArgumentException("중복된 이메일입니다.");
-        }
-        User user = new User(userName, userEmail);
-        return userRepository.save(user);
+    public UserDto create(UserCreateRequest request){
+//        if (userRepository.existByEmail(userEmail)) {
+//            throw new IllegalArgumentException("중복된 이메일입니다.");
+//        }
+        User user = new User(request.userName(), request.userEmail(), request.password(), request.profileId()) ;
+        userRepository.save(user);
+        return toDto(user);
     }
 
     //Read

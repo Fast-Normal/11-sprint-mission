@@ -2,8 +2,6 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -28,6 +26,7 @@ public class BinaryContent extends AbstractEntity{
 
     public String toString() {
         return "fileName: " + fileName
+                + ", originalFileName: " + originalFileName
                 + ", contentType: " + contentType
                 + ", size: " + size
                 + ", bytes: " + bytes;
