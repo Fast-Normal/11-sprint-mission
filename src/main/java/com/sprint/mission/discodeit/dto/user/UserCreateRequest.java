@@ -1,11 +1,12 @@
 package com.sprint.mission.discodeit.dto.user;
 
-import java.time.Instant;
+import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
+
 import java.util.UUID;
 
 public record UserCreateRequest(
         String userName,
         String userEmail,
-        UUID profileId,
-        String password
+        String password,
+        BinaryContentCreateRequest profileImage
 ) {}

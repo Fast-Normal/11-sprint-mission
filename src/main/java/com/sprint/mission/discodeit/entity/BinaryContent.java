@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 @Getter
@@ -29,7 +30,7 @@ public class BinaryContent extends AbstractEntity{
                 + ", originalFileName: " + originalFileName
                 + ", contentType: " + contentType
                 + ", size: " + size
-                + ", bytes: " + bytes;
+                + ", bytes: " + bytes.length + "bytes";
     }
 }
 

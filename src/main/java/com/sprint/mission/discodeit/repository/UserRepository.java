@@ -11,6 +11,8 @@ public interface UserRepository {
 
     Optional<User> findById(UUID id);
 
+    Optional<User> findByUserName(String userName);
+
     List<User> findAll();
 
     void delete(UUID id);
@@ -18,4 +20,6 @@ public interface UserRepository {
     boolean existByEmail(String userEmail);
 
     boolean existsById(UUID id);
+
+    boolean existsByUsername(String userName);
 }

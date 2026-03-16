@@ -25,7 +25,7 @@ public class UserStatus extends AbstractEntity{
 
 
     public boolean isOnline() {
-        return Instant.now().isBefore(lastActiveAt.plus(Duration.ofMinutes(5)));
+        return Instant.now().isAfter(lastActiveAt.plus(Duration.ofMinutes(5)));
     }
 
     public String toString() {

@@ -9,6 +9,7 @@ public record UserDto(
         String userEmail,
         UUID profileId,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        boolean isOnline
         // password 없음
 ) {}
