@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -15,13 +15,13 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Repository
-public class FileMessageRepository implements MessageRepository {
+public class FileBinaryContentRepository implements BinaryContentRepository {
 
     private final Path DIRECTORY;
     private final String EXTENSION = ".ser";
 
-    public FileMessageRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", Message.class.getSimpleName());
+    public FileBinaryContentRepository() {
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", BinaryContent.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);
@@ -35,50 +35,41 @@ public class FileMessageRepository implements MessageRepository {
         return DIRECTORY.resolve(id + EXTENSION);
     }
 
-    //create
+    // save
     @Override
-    public Message save(Message message) {
-
-        Path path = resolvePath(message.getId());
-        try (
-                FileOutputStream fos = new FileOutputStream(path.toFile());
-                ObjectOutputStream oos = new ObjectOutputStream(fos)
+    public BinaryContent save(BinaryContent binaryContent) {
+        Path path = resolvePath(binaryContent.getId());
+        try (FileOutputStream fos = new FileOutputStream(path.toFile());
+            ObjectOutputStream oos = new ObjectOutputStream(fos)
         ) {
-            oos.writeObject(message);
+            oos.writeObject(binaryContent);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return message;
+        return binaryContent;
     }
 
-    //read
+    // read
     @Override
-    public Optional<Message> findById(UUID messageId){
-        Path path = resolvePath(messageId);
-        Message messageNullable = null;
+    public Optional<BinaryContent> findById(UUID binaryContentId) {
+        Path path = resolvePath(binaryContentId);
+        BinaryContent binaryContentNullable = null;
 
-        if (Files.exists(path)) {
-            try (
-                    FileInputStream fis = new FileInputStream(path.toFile());
-                    ObjectInputStream ois = new ObjectInputStream(fis)
+        if(Files.exists(path)) {
+            try (FileInputStream fis = new FileInputStream(path.toFile());
+                ObjectInputStream ois = new ObjectInputStream(fis)
             ) {
-                messageNullable = (Message) ois.readObject();
+                binaryContentNullable = (BinaryContent) ois.readObject();
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
-        return Optional.ofNullable(messageNullable);
+        return Optional.ofNullable(binaryContentNullable);
     }
 
+    // read all
     @Override
-    public Optional<Message> findByChannelId(UUID channelId) {
-        return findAll().stream()
-                .filter(m-> m.getChannelId().equals(channelId))
-                .findFirst();
-    }
-    //readAll
-    @Override
-    public List<Message> findAll(){
+    public List<BinaryContent> findAll() {
         try (Stream<Path> paths = Files.list(DIRECTORY)){
             return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
@@ -86,8 +77,8 @@ public class FileMessageRepository implements MessageRepository {
                         try (
                                 FileInputStream fis = new FileInputStream(path.toFile());
                                 ObjectInputStream ois = new ObjectInputStream(fis)
-                        ) {
-                            return (Message) ois.readObject();
+                                ) {
+                            return (BinaryContent) ois.readObject();
                         } catch (IOException | ClassNotFoundException e) {
                             throw new RuntimeException(e);
                         }
@@ -99,31 +90,28 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> findAllByChannelId(UUID channelId) {
+    public List<BinaryContent> findAllByIdIn(List<UUID> ids) {
         return findAll().stream()
-                .filter(m -> m.getChannelId().equals(channelId))
+                .filter(bc -> ids.contains(bc.getId()))
                 .toList();
     }
 
-
-    //delete
+    // delete
     @Override
-    public void delete(UUID messageId) {
-        Path path = resolvePath(messageId);
+    public void delete(UUID binaryContentId) {
+        Path path = resolvePath(binaryContentId);
         if (Files.notExists(path)) {
-            throw new NoSuchElementException("메시지를 찾을 수 없습니다: " + messageId);
+            throw new NoSuchElementException("컨텐츠를 찾을 수 없습니다: " +binaryContentId);
         }
         try {
             Files.delete(path);
-        } catch (IOException e) {
+        } catch (IOException e){
             throw new RuntimeException(e);
         }
     }
 
-    //delete by ChannelId
     @Override
-    public void deleteByChannelId(UUID channelId){
-        findByChannelId(channelId)
-                .ifPresent(msg -> delete(msg.getId()));
+    public void deleteAllByIdIn(List<UUID> ids) {
+        ids.forEach(this::delete);
     }
 }

@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 
 public record ChannelUpdateRequest(
         String channelName,
-        ChannelType type,
         String description
 ) {
 }

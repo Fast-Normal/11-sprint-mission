@@ -22,11 +22,6 @@ public class Channel extends AbstractEntity {
         timeUpdated();
     }
 
-    public void updateChannelType(ChannelType type){
-        this.type = type;
-        timeUpdated();
-    }
-
     public void updateChannelDescription(String description){
         this.description = description;
         timeUpdated();

@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -94,12 +95,16 @@ public class FileChannelRepository implements ChannelRepository {
     @Override
     public void delete(UUID channelId){
         Path path = resolvePath(channelId);
+        if (Files.notExists(path)) {
+            throw new NoSuchElementException("채널을 찾을 수 없습니다: " + channelId);
+        }
         try {
             Files.delete(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     // existsById
     @Override

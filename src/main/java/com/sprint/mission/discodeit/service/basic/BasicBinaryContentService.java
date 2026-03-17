@@ -2,25 +2,25 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
-import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
     private final BinaryContentRepository binaryContentRepository;
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
 
     private BinaryContentDto toDto(BinaryContent binaryContent) {
         return new BinaryContentDto(
@@ -36,42 +36,45 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     //create
     @Override
-    public BinaryContentDto create(BinaryContentCreateRequest request){
+    public BinaryContentDto create(BinaryContentCreateRequest request) {
+        // 용량 제한
+        if (request.size() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("파일 크기 초과: 최대 10MB");
+        }
+        // 확장자 제한
+        if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
+            throw new IllegalArgumentException("허용되지 않는 확장자: " + request.contentType());
+        }
 
         BinaryContent binaryContent = new BinaryContent(request.originalFileName(),
-                                                        request.contentType(),
-                                                        request.bytes());
-        binaryContentRepository.save(binaryContent);
-        return toDto(binaryContent);
+                request.contentType(),
+                request.bytes());
+
+        return toDto(binaryContentRepository.save(binaryContent));
     }
 
     //Read
     @Override
-    public User findById(UUID userId){
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+    public BinaryContentDto findById(UUID binaryContentId) {
+        return toDto(binaryContentRepository.findById(binaryContentId)
+                .orElseThrow(() -> new NoSuchElementException("컨텐츠를 찾을 수 없습니다.")));
     }
 
     //Read all
     @Override
-    public List<User> findAll() {
-        return userRepository.findAll();
-    }
-
-    //Update
-    @Override
-    public User update(UUID userId, String newUserName, String newUserEmail){
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
-
-        user.updateUserName(newUserName);
-        user.updateUserEmail(newUserEmail);
-        return userRepository.save(user);
+    public List<BinaryContentDto> findAllByIdIn(List<UUID> ids) {
+        return binaryContentRepository.findAllByIdIn(ids)
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     //Delete
     @Override
-    public void delete(UUID userId){
-        userRepository.delete(userId);
+    public void delete(UUID binaryContentId) {
+        binaryContentRepository.findById(binaryContentId)
+                .orElseThrow(() -> new NoSuchElementException("컨텐츠를 찾을 수 없습니다." + binaryContentId));
+
+        binaryContentRepository.delete(binaryContentId);
     }
 }

@@ -1,8 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -99,8 +98,11 @@ public class FileUserStatusRepository implements UserStatusRepository {
 
     // delete
     @Override
-    public void delete(UUID userId) {
-        Path path = resolvePath(userId);
+    public void delete(UUID id) {
+        Path path = resolvePath(id);
+        if (Files.notExists(path)) {
+            throw new NoSuchElementException("유저 스테이터스를 찾을 수 없습니다: " + id);
+        }
         try {
             Files.delete(path);
         } catch (IOException e){
