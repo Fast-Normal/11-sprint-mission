@@ -38,7 +38,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContentDto create(BinaryContentCreateRequest request) {
         // 용량 제한
-        if (request.size() > MAX_FILE_SIZE) {
+        if (request.bytes().length > MAX_FILE_SIZE) {
             throw new IllegalArgumentException("파일 크기 초과: 최대 10MB");
         }
         // 확장자 제한

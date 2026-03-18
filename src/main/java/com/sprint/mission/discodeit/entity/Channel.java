@@ -2,10 +2,13 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
 
+import java.io.Serial;
+
 
 @Getter
 public class Channel extends AbstractEntity {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     private String channelName;
     private ChannelType type;
     private String description;

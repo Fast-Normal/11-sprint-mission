@@ -15,6 +15,8 @@ public interface UserStatusService {
     //Read
     UserStatusDto findById(UUID userStatusId);
 
+    UserStatusDto findByUserId(UUID userId);
+
     //Read all
     List<UserStatusDto> findAll();
 

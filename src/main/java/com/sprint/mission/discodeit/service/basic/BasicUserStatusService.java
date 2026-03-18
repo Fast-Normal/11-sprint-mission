@@ -54,6 +54,13 @@ public class BasicUserStatusService implements UserStatusService {
         return toDto(userStatus);
     }
 
+    @Override
+    public UserStatusDto findByUserId(UUID userId) {
+        UserStatus userStatus = userStatusRepository.findByUserId(userId)
+                .orElseThrow(()-> new NoSuchElementException(("유저 스테이터스가 없습니다: " + userId)));
+        return toDto(userStatus);
+    }
+
     //Read all
     @Override
     public List<UserStatusDto> findAll() {
