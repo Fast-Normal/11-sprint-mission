@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,9 +29,8 @@ public class ReadStatusController {
     // 특정 채널의 메시지 수신 정보 수정
     @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
     public ResponseEntity<ReadStatusDto> update(
-            @PathVariable UUID readStatusId,
-            @RequestBody ReadStatusUpdateRequest request) {
-        ReadStatusDto updated = readStatusService.update(readStatusId, request);
+            @PathVariable UUID readStatusId) {
+        ReadStatusDto updated = readStatusService.update(readStatusId, new ReadStatusUpdateRequest(Instant.now()));
         return ResponseEntity.ok(updated);
     }
 

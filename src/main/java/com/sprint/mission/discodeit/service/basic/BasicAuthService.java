@@ -29,6 +29,8 @@ public class BasicAuthService implements AuthService {
         UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new NoSuchElementException("유저 스테이터스가 없습니다." + user.getId()));
 
+        userStatus.updateConnection();
+
         return new UserDto(
                 user.getId(),
                 user.getUserName(),

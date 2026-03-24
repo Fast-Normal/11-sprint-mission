@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
@@ -8,7 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,9 +25,28 @@ public class MessageController {
     // 메시지 생성
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<MessageDto> create(
-            @RequestParam MessageCreateRequest request) {
-        MessageDto message = messageService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(message);
+            @RequestPart("messageInfo") MessageCreateRequest request,
+            @RequestPart(value = "attachments", required = false)List<MultipartFile> attachments) throws IOException {
+
+        // MultipartFile List를 BinaryContentCreateRequest List로 변환
+        List<BinaryContentCreateRequest> attachmentRequests = new ArrayList<>();
+        if (attachments != null && !attachments.isEmpty()) {
+            for (MultipartFile file : attachments) {
+                attachmentRequests.add(new BinaryContentCreateRequest(
+                        file.getOriginalFilename(),
+                        file.getContentType(),
+                        file.getBytes()
+                ));
+            }
+        }
+
+        MessageCreateRequest serviceRequest = new MessageCreateRequest(
+                request.authorId(),
+                request.channelId(),
+                request.content(),
+                attachmentRequests.isEmpty() ? null : attachmentRequests
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(serviceRequest));
     }
 
     // 특정 채널의 메시지 목록 조회
@@ -38,9 +61,25 @@ public class MessageController {
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<MessageDto> update(
             @PathVariable UUID messageId,
-            @RequestParam MessageUpdateRequest request) {
-        MessageDto updated = messageService.update(messageId, request);
-        return ResponseEntity.ok(updated);
+            @RequestPart("messageInfo") MessageUpdateRequest request,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) throws IOException {
+
+        List<BinaryContentCreateRequest> attachmentRequests = new ArrayList<>();
+        if (attachments != null && !attachments.isEmpty()) {
+            for (MultipartFile file : attachments) {
+                attachmentRequests.add(new BinaryContentCreateRequest(
+                        file.getOriginalFilename(),
+                        file.getContentType(),
+                        file.getBytes()
+                ));
+            }
+        }
+        MessageUpdateRequest serviceRequest = new MessageUpdateRequest(
+                request.newContent(),
+                attachmentRequests.isEmpty() ? null : attachmentRequests
+        );
+
+        return ResponseEntity.ok(messageService.update(messageId, serviceRequest));
     }
 
     // 메시지 삭제
