@@ -1,0 +1,37 @@
+package com.sprint.mission.discodeit.entity;
+
+import lombok.Getter;
+
+import java.io.Serial;
+import java.util.UUID;
+
+@Getter
+public class BinaryContent extends AbstractEntity{
+    @Serial
+    private static final long serialVersionUID = 1L;
+    private final String fileName;
+    private final String originalFileName;
+    private final String contentType;
+    private final long size;
+    private final byte[] bytes;
+
+
+    public BinaryContent(String originalFileName, String contentType, byte[] bytes) {
+        super();
+        this.fileName = UUID.randomUUID().toString();
+        this.originalFileName = originalFileName;
+        this.contentType = contentType;
+        this.size = bytes.length;
+        this.bytes = bytes;
+    }
+
+
+    public String toString() {
+        return "fileName: " + fileName
+                + ", originalFileName: " + originalFileName
+                + ", contentType: " + contentType
+                + ", size: " + size
+                + ", bytes: " + bytes.length + "bytes";
+    }
+}
+
