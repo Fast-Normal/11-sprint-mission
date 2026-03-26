@@ -93,7 +93,7 @@ public class UserController {
     public ResponseEntity<UserStatusDto> updateUserStatus(
             @PathVariable UUID userId) {
 
-        UserStatusDto updated = userStatusService.updateByUserId(userId, new UserStatusUpdateRequest(Instant.now()));
+        UserStatusDto updated = userStatusService.updateByUserId(userId);
         return ResponseEntity.ok(updated);
     }
 

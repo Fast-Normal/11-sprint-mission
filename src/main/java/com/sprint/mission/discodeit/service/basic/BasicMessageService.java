@@ -77,9 +77,8 @@ public class BasicMessageService implements MessageService {
     //readAll
     @Override
     public List<MessageDto> findAllByChannelId(UUID channelId) {
-        return messageRepository.findAll()
+        return messageRepository.findAllByChannelId(channelId)
                 .stream()
-                .filter(m -> m.getChannelId().equals(channelId))
                 .map(this::toDto)
                 .toList();
     }

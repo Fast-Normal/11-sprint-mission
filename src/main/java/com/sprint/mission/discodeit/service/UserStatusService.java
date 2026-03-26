@@ -21,10 +21,10 @@ public interface UserStatusService {
     List<UserStatusDto> findAll();
 
     //Update
-    UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest request);
+    UserStatusDto update(UUID userStatusId);
 
     //Update by user id
-    UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request);
+    UserStatusDto updateByUserId(UUID userId);
 
     //Delete
     void delete(UUID userStatusId);
