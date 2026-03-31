@@ -7,13 +7,14 @@ import java.util.List;
 import java.util.UUID;
 
 public record ChannelDto(
-        UUID id,
-        Instant createdAt,
-        Instant updatedAt,
-        String channelName,
-        ChannelType type,
-        String description,
-        List<UUID> participantsIds,
-        Instant lastMessageAt
+    UUID id,
+    Instant createdAt,
+    Instant updatedAt,
+    String name,
+    ChannelType type,
+    String description,
+    List<UUID> participantIds,
+    Instant lastMessageAt
 ) {
+
 }

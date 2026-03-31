@@ -9,24 +9,24 @@ import java.util.UUID;
 
 public interface UserStatusService {
 
-    //Create
-    UserStatusDto create(UserStatusCreateRequest request);
+  //Create
+  UserStatusDto create(UserStatusCreateRequest request);
 
-    //Read
-    UserStatusDto findById(UUID userStatusId);
+  //Read
+  UserStatusDto findById(UUID userStatusId);
 
-    UserStatusDto findByUserId(UUID userId);
+  UserStatusDto findByUserId(UUID userId);
 
-    //Read all
-    List<UserStatusDto> findAll();
+  //Read all
+  List<UserStatusDto> findAll();
 
-    //Update
-    UserStatusDto update(UUID userStatusId);
+  //Update
+  UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest request);
 
-    //Update by user id
-    UserStatusDto updateByUserId(UUID userId);
+  //Update by user id
+  UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request);
 
-    //Delete
-    void delete(UUID userStatusId);
+  //Delete
+  void delete(UUID userStatusId);
 
 }
