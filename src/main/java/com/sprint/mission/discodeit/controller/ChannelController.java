@@ -50,13 +50,28 @@ public class ChannelController {
     return ResponseEntity.status(HttpStatus.CREATED).body(channel);
   }
 
+  // 채널 단건 조회
+  @Operation(summary = "Channel 단건 조회")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Channel 조회 성공",
+          content = @Content(schema = @Schema(implementation = ChannelDto.class))),
+      @ApiResponse(responseCode = "404", description = "Channel을 찾을 수 없음",
+          content = @Content(schema = @Schema(example = "Channel with id {channelId} not found")))
+  })
+  @GetMapping("/{channelId}")
+  public ResponseEntity<ChannelDto> findById(
+      @Parameter(description = "조회할 Channel ID") @PathVariable UUID channelId) {
+    ChannelDto channel = channelService.findById(channelId);
+    return ResponseEntity.ok(channel);
+  }
+
   // 특정 사용자가 볼 수 있는 모든 채널 목록을 조회
   @Operation(summary = "User가 참여 중인 Channel 목록 조회")
   @ApiResponse(responseCode = "200", description = "Channel 목록 조회 성공",
       content = @Content(schema = @Schema(implementation = ChannelDto.class)))
-  @GetMapping("/{userId}")
+  @GetMapping
   public ResponseEntity<List<ChannelDto>> findAllByUserId(
-      @Parameter(description = "조회할 User ID") @PathVariable UUID userId) {
+      @Parameter(description = "조회할 User ID") @RequestParam UUID userId) {
     List<ChannelDto> channels = channelService.findAllByUserId(userId);
     return ResponseEntity.ok(channels);
   }

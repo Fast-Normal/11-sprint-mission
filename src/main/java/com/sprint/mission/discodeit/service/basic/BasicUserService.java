@@ -105,14 +105,16 @@ public class BasicUserService implements UserService {
     // if문을 거쳐 새 이미지가 들어오면 newProfileId에 새 id를 넣고, 아니면 이전 id 그대로
 
     // 중복 이메일 검증
-    if (userRepository.existByEmail(request.newEmail())) {
+    if (!user.getUserEmail().equals(request.newEmail()) && userRepository.existByEmail(
+        request.newEmail())) {
       throw new IllegalArgumentException(("사용중인 이메일입니다." + request.newEmail()));
     }
     // 중복 이름 검증
-    if (userRepository.existsByUsername(request.newUsername())) {
+    if (!user.getUserName().equals(request.newUsername())
+        && userRepository.existsByUsername(request.newUsername())) {
       throw new IllegalArgumentException(("사용중인 이름입니다." + request.newUsername()));
     }
-    
+
     user.updateUserName(request.newUsername());
     user.updateUserEmail(request.newEmail());
     user.updatePassword(request.newPassword());

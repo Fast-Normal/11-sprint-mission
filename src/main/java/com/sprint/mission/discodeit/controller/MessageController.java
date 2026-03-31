@@ -71,9 +71,9 @@ public class MessageController {
   @Operation(summary = "Channel의 Message 목록 조회")
   @ApiResponse(responseCode = "200", description = "Message 목록 조회 성공",
       content = @Content(schema = @Schema(implementation = MessageDto.class)))
-  @GetMapping("/{channelId}")
+  @GetMapping
   public ResponseEntity<List<MessageDto>> findAllByChannelId(
-      @Parameter(description = "조회할 Channel ID") @PathVariable UUID channelId) {
+      @Parameter(description = "조회할 Channel ID") @RequestParam UUID channelId) {
     List<MessageDto> messages = messageService.findAllByChannelId(channelId);
     return ResponseEntity.ok(messages);
   }

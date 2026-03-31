@@ -69,9 +69,9 @@ public class FileMessageRepository implements MessageRepository {
     lock.lock();
 
     try {
-        if (!Files.exists(path)) {
-            return Optional.empty();
-        }
+      if (!Files.exists(path)) {
+        return Optional.empty();
+      }
       try (FileInputStream fis = new FileInputStream(path.toFile());
           ObjectInputStream ois = new ObjectInputStream(fis)) {
         return Optional.of((Message) ois.readObject());
@@ -145,7 +145,7 @@ public class FileMessageRepository implements MessageRepository {
   //delete by ChannelId
   @Override
   public void deleteByChannelId(UUID channelId) {
-    findByChannelId(channelId)
-        .ifPresent(msg -> delete(msg.getId()));
+    findAllByChannelId(channelId)
+        .forEach(msg -> delete(msg.getId()));
   }
 }

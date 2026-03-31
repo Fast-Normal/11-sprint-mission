@@ -33,10 +33,10 @@ public class AuthController {
           content = @Content(schema = @Schema(example = "Wrong password")))
   })
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(
+  public ResponseEntity<UserDto> login(
       @RequestBody LoginRequest request) {
     UserDto user = authService.login(request);
 
-    return ResponseEntity.ok(new LoginResponse("로그인 성공", user));
+    return ResponseEntity.ok(user);
   }
 }

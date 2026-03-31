@@ -10,7 +10,7 @@ public record UserDto(
     UUID profileId,
     Instant createdAt,
     Instant updatedAt,
-    boolean isOnline
+    boolean online
     // password 없음
 ) {
 

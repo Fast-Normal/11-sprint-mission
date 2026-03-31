@@ -22,7 +22,7 @@ public class UserStatus extends AbstractEntity {
   }
 
   public void updateConnection(Instant lastActiveAt) {
-    this.lastActiveAt = Instant.now();
+    this.lastActiveAt = lastActiveAt != null ? lastActiveAt : Instant.now();
     timeUpdated();
   }
 
