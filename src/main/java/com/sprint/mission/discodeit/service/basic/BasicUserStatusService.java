@@ -22,10 +22,10 @@ public class BasicUserStatusService implements UserStatusService {
 
     private UserStatusDto toDto(UserStatus userStatus) {
         return new UserStatusDto(
-                userStatus.getUserId(),
+                userStatus.getId(),
                 userStatus.getCreatedAt(),
                 userStatus.getUpdatedAt(),
-                userStatus.getId(),
+                userStatus.getUserId(),
                 userStatus.getLastActiveAt()
         );
     }
@@ -39,7 +39,9 @@ public class BasicUserStatusService implements UserStatusService {
 
         // 같은 유저의 스테이터스가 이미 존재하면 예외
         userStatusRepository.findByUserId(request.userId())
-                .orElseThrow(()-> new IllegalArgumentException("이미 존재하는 UserStatus 입니다." + request.userId() ));
+                .ifPresent(us -> {
+                    throw new IllegalArgumentException("이미 존재하는 UserStatus입니다.");
+                });
 
         UserStatus userStatus = new UserStatus(request.userId());
         userStatusRepository.save(userStatus);
@@ -71,7 +73,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     //Update
     @Override
-    public UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest request){
+    public UserStatusDto update(UUID userStatusId){
         UserStatus userStatus = findUserStatusOrThrow(userStatusId);
         userStatus.updateConnection();
         return toDto(userStatusRepository.save(userStatus));
@@ -79,7 +81,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     // 유저 아이디로 객체 업데이트
     @Override
-    public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+    public UserStatusDto updateByUserId(UUID userId) {
         UserStatus userStatus = findUserStatusByUserIdOrThrow(userId);
         userStatus.updateConnection();
         return toDto(userStatusRepository.save(userStatus));
