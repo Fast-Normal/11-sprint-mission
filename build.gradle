@@ -6,12 +6,11 @@ plugins {
 
 group = 'com.sprint.mission'
 version = '0.0.1-SNAPSHOT'
-description = 'Sprint mission 3'
+description = 'Sprint mission 5'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 configurations {
