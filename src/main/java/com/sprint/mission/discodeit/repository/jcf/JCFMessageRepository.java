@@ -12,54 +12,55 @@ import java.util.*;
 @Repository
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "jcf", matchIfMissing = true)
 public class JCFMessageRepository implements MessageRepository {
-    private final Map<UUID, Message> data;
 
-    public JCFMessageRepository() {
-        this.data = new HashMap<>();
-    }
+  private final Map<UUID, Message> data;
 
-    //save
-    @Override
-    public Message save(Message message) {
-        data.put(message.getId(), message);
-        return message;
-    }
+  public JCFMessageRepository() {
+    this.data = new HashMap<>();
+  }
 
-    //read
-    @Override
-    public Optional<Message> findById(UUID messageId){
-        return Optional.ofNullable(data.get(messageId));
-    }
+  //save
+  @Override
+  public Message save(Message message) {
+    data.put(message.getId(), message);
+    return message;
+  }
 
-    @Override
-    public Optional<Message> findByChannelId(UUID channelId) {
-        return findAll().stream()
-                .filter(m-> m.getChannelId().equals(channelId))
-                .findFirst();
-    }
+  //read
+  @Override
+  public Optional<Message> findById(UUID messageId) {
+    return Optional.ofNullable(data.get(messageId));
+  }
 
-    //readAll
-    @Override
-    public List<Message> findAll(){
-        return new ArrayList<>(data.values());
-    }
+  @Override
+  public Optional<Message> findByChannelId(UUID channelId) {
+    return findAll().stream()
+        .filter(m -> m.getChannelId().equals(channelId))
+        .findFirst();
+  }
 
-    @Override
-    public List<Message> findAllByChannelId(UUID channelId) {
-        return findAll().stream()
-                .filter(m -> m.getChannelId().equals(channelId))
-                .toList();
-    }
+  //readAll
+  @Override
+  public List<Message> findAll() {
+    return new ArrayList<>(data.values());
+  }
 
-    //delete
-    @Override
-    public void delete(UUID messageId){
-        data.remove(messageId);
-    }
+  @Override
+  public List<Message> findAllByChannelId(UUID channelId) {
+    return findAll().stream()
+        .filter(m -> m.getChannelId().equals(channelId))
+        .toList();
+  }
 
-    @Override
-    public void deleteByChannelId(UUID channelId) {
-        findByChannelId(channelId)
-                .ifPresent(msg -> delete(msg.getId()));
-    }
+  //delete
+  @Override
+  public void delete(UUID messageId) {
+    data.remove(messageId);
+  }
+
+  @Override
+  public void deleteByChannelId(UUID channelId) {
+    findAllByChannelId(channelId)
+        .forEach(msg -> delete(msg.getId()));
+  }
 }

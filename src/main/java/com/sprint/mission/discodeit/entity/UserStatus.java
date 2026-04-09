@@ -8,31 +8,32 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Getter
-public class UserStatus extends AbstractEntity{
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private final UUID userId;
-    private Instant lastActiveAt;
+public class UserStatus extends AbstractEntity {
 
-    public UserStatus(UUID userId) {
-        super();
-        this.userId = userId;
-        this.lastActiveAt = Instant.now();
-    }
+  @Serial
+  private static final long serialVersionUID = 1L;
+  private final UUID userId;
+  private Instant lastActiveAt;
 
-    public void updateConnection() {
-        this.lastActiveAt = Instant.now();
-        timeUpdated();
-    }
+  public UserStatus(UUID userId) {
+    super();
+    this.userId = userId;
+    this.lastActiveAt = Instant.now();
+  }
+
+  public void updateConnection(Instant lastActiveAt) {
+    this.lastActiveAt = lastActiveAt != null ? lastActiveAt : Instant.now();
+    timeUpdated();
+  }
 
 
-    public boolean isOnline() {
-        return Instant.now().isBefore(lastActiveAt.plus(Duration.ofMinutes(5)));
-    }
+  public boolean isOnline() {
+    return Instant.now().isBefore(lastActiveAt.plus(Duration.ofMinutes(5)));
+  }
 
-    public String toString() {
-        return "userId: " + userId
-                + ", lastConnectedAt: " + lastActiveAt;
-    }
+  public String toString() {
+    return "userId: " + userId
+        + ", lastConnectedAt: " + lastActiveAt;
+  }
 }
 
