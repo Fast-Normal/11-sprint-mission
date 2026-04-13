@@ -5,18 +5,8 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BinaryContentRepository {
-    BinaryContent save(BinaryContent binaryContent);
+public interface BinaryContentRepository extends JpaRepository<BinaryContent, UUID> {
 
-    Optional<BinaryContent> findById(UUID id);
-
-    List<BinaryContent> findAll();
-
-    List<BinaryContent> findAllByIdIn(List<UUID> ids);
-
-    void delete(UUID id);
-
-    void deleteAllByIdIn(List<UUID> ids);
-    
 }
