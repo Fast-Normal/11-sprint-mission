@@ -1,37 +1,40 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
 import java.io.Serial;
 import java.util.UUID;
 
-@Getter
-public class BinaryContent extends AbstractEntity{
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private final String fileName;
-    private final String originalFileName;
-    private final String contentType;
-    private final long size;
-    private final byte[] bytes;
+@Entity
+@Table(name = "binary_contents")
+public class BinaryContent extends BaseEntity {
+
+  @Column(nullable = false)
+  private String fileName;
+
+  @Column(nullable = false)
+  private String contentType;
+
+  @Column(nullable = false)
+  private long size;
 
 
-    public BinaryContent(String originalFileName, String contentType, byte[] bytes) {
-        super();
-        this.fileName = UUID.randomUUID().toString();
-        this.originalFileName = originalFileName;
-        this.contentType = contentType;
-        this.size = bytes.length;
-        this.bytes = bytes;
-    }
+  public BinaryContent(String contentType, long size) {
+    super();
+    this.fileName = UUID.randomUUID().toString();
+    this.contentType = contentType;
+    this.size = size;
+  }
 
 
-    public String toString() {
-        return "fileName: " + fileName
-                + ", originalFileName: " + originalFileName
-                + ", contentType: " + contentType
-                + ", size: " + size
-                + ", bytes: " + bytes.length + "bytes";
-    }
+  public String toString() {
+    return "fileName: " + fileName
+        + ", contentType: " + contentType
+        + ", size: " + size;
+  }
 }
 

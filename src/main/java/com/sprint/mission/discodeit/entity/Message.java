@@ -1,39 +1,64 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.NoArgsConstructor;
 
-@Getter
-public class Message extends AbstractEntity {
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private final UUID authorId;
-    private final UUID channelId;
-    private String content;
-    private List<UUID> attachmentIds = new ArrayList<>();
+@Entity
+@Table(name = "messages")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Message extends BaseUpdatableEntity {
 
-    public Message(UUID authorId, UUID channelId, String content) {
-        super();
-        this.authorId = authorId;
-        this.channelId = channelId;
-        this.content = content;
-    }
+  @Column(nullable = false)
+  private String content;
 
-    public void updateContent(String content) {
-        this.content = content;
-        timeUpdated();
-    }
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "channel_id", nullable = false)
+  private Channel channel;
 
-    public void attachFile(UUID binaryContentId) {
-        attachmentIds.add(binaryContentId);
-        timeUpdated();
-    }
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "author_id", nullable = false)
+  private User author;
 
-    public String toString() {
-        return "authorId: " + authorId + ", channelId:" + channelId + ", content: " + content  ;
-    }
+  @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+  @JoinTable(
+      name = "message_attachments",
+      joinColumns = @JoinColumn(name = "message_id"),
+      inverseJoinColumns = @JoinColumn(name = "attachment_id")
+  )
+  private List<BinaryContent> attachments = new ArrayList<>();
+
+  public Message(User author, Channel channel, String content) {
+    super();
+    this.author = author;
+    this.channel = channel;
+    this.content = content;
+  }
+
+  public void updateContent(String content) {
+    this.content = content;
+  }
+
+  public void attachFile(BinaryContent binaryContent) {
+    attachments.add(binaryContent);
+  }
+
+  public String toString() {
+    return "author: " + author + ", channel:" + channel + ", content: " + content;
+  }
 }

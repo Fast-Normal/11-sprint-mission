@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -68,7 +67,7 @@ public class ReadStatusController {
   @GetMapping
   public ResponseEntity<List<ReadStatusDto>> findAllByUserId(
       @Parameter(description = "조회할 User ID") @RequestParam UUID userId) {
-    List<ReadStatusDto> rsList = readStatusService.findAllByUserId(userId);
-    return ResponseEntity.ok(rsList);
+    List<ReadStatusDto> readStatusList = readStatusService.findAllByUserId(userId);
+    return ResponseEntity.ok(readStatusList);
   }
 }
