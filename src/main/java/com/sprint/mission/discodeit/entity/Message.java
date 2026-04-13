@@ -11,12 +11,9 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Getter;
 
-import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -41,7 +38,7 @@ public class Message extends BaseUpdatableEntity {
       joinColumns = @JoinColumn(name = "message_id"),
       inverseJoinColumns = @JoinColumn(name = "attachment_id")
   )
-  private List<BinaryContent> attachments = new ArrayList<>();
+  private final List<BinaryContent> attachments = new ArrayList<>();
 
   public Message(User author, Channel channel, String content) {
     super();
