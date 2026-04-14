@@ -12,8 +12,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +36,8 @@ public class ChannelController {
   public ResponseEntity<ChannelDto> createPublicChannel(
       @RequestBody PublicChannelCreateRequest request) {
     ChannelDto channel = channelService.createPublicChannel(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(channel);
+    URI location = URI.create("/api/channels/public/" + channel.id());
+    return ResponseEntity.created(location).body(channel);
   }
 
   // 비공개 채널 생성
@@ -47,7 +48,8 @@ public class ChannelController {
   public ResponseEntity<ChannelDto> createPrivateChannel(
       @RequestBody PrivateChannelCreateRequest request) {
     ChannelDto channel = channelService.createPrivateChannel(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(channel);
+    URI location = URI.create("/api/channels/private/" + channel.id());
+    return ResponseEntity.created(location).body(channel);
   }
 
   // 채널 단건 조회

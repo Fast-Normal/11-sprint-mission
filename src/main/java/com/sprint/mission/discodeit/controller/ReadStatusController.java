@@ -11,8 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,8 +40,9 @@ public class ReadStatusController {
   @PostMapping
   public ResponseEntity<ReadStatusDto> create(
       @RequestBody ReadStatusCreateRequest request) {
-    ReadStatusDto rs = readStatusService.create(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(rs);
+    ReadStatusDto readStatus = readStatusService.create(request);
+    URI location = URI.create("api/readStatuses/" + readStatus.id());
+    return ResponseEntity.created(location).body(readStatus);
   }
 
   // 특정 채널의 메시지 수신 정보 수정

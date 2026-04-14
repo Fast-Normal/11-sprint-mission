@@ -13,11 +13,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -68,7 +68,9 @@ public class MessageController {
         request.content(),
         attachmentRequests.isEmpty() ? null : attachmentRequests
     );
-    return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(serviceRequest));
+    MessageDto message = messageService.create(serviceRequest);
+    URI location = URI.create("/api/messages/" + message.id());
+    return ResponseEntity.created(location).body(message);
   }
 
   // 특정 채널의 메시지 목록 조회
