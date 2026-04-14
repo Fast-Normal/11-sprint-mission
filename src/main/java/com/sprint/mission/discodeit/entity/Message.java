@@ -14,14 +14,16 @@ import lombok.AccessLevel;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "messages")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Message extends BaseUpdatableEntity {
 
-  @Column(nullable = false)
+  @Column(columnDefinition = "text")
   private String content;
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -41,7 +43,6 @@ public class Message extends BaseUpdatableEntity {
   private final List<BinaryContent> attachments = new ArrayList<>();
 
   public Message(User author, Channel channel, String content) {
-    super();
     this.author = author;
     this.channel = channel;
     this.content = content;

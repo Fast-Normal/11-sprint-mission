@@ -12,11 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 
 @Entity
 @Table(name = "channels")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Channel extends BaseUpdatableEntity {
 

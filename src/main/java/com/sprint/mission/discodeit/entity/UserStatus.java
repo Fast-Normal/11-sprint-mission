@@ -11,10 +11,12 @@ import lombok.AccessLevel;
 
 import java.time.Duration;
 import java.time.Instant;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "user_statuses")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserStatus extends BaseUpdatableEntity {
 

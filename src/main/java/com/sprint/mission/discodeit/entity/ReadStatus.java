@@ -11,9 +11,11 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 
 import java.time.Instant;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
 @Table(name = "read_statuses",
     uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "channel_id"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

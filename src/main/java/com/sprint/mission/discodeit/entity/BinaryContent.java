@@ -7,10 +7,12 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "binary_contents")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BinaryContent extends BaseEntity {
 
@@ -25,7 +27,6 @@ public class BinaryContent extends BaseEntity {
 
 
   public BinaryContent(String contentType, long size) {
-    super();
     this.fileName = UUID.randomUUID().toString();
     this.contentType = contentType;
     this.size = size;

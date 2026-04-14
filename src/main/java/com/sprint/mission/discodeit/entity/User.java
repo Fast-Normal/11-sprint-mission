@@ -10,10 +10,12 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseUpdatableEntity {
 
@@ -37,6 +39,11 @@ public class User extends BaseUpdatableEntity {
     this.username = username;
     this.email = email;
     this.password = password;
+    this.profile = profile; // null 허용
+  }
+
+  public void initUserStatus() {
+    this.userStatus = new UserStatus(this);
   }
 
   public void updateUserName(String userName) {
