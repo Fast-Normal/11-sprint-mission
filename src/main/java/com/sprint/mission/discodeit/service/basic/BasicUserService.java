@@ -4,45 +4,40 @@ import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
-  private final UserStatusRepository userStatusRepository;
-  private final BinaryContentService binaryContentService;
-
-  private UserDto toDto(User user, UserStatus userStatus) {
-    return new UserDto(
-        user.getId(),
-        user.getUserName(),
-        user.getUserEmail(),
-        user.getProfileId(),
-        user.getCreatedAt(),
-        user.getUpdatedAt(),
-        userStatus.isOnline()
-        // 패스워드 반환 안 함
-    );
-  }
+  private final BinaryContentStorage binaryContentStorage;
+  private final BinaryContentRepository binaryContentRepository;
+  private final UserMapper userMapper;
 
   //create
+  @Transactional
   @Override
   public UserDto create(UserCreateRequest request) {
     // 중복 이메일 검증
-    if (userRepository.existByEmail(request.email())) {
+    if (userRepository.existsByEmail(request.email())) {
       throw new IllegalArgumentException(("중복된 이메일입니다." + request.email()));
     }
     // 중복 이름 검증
@@ -50,67 +45,70 @@ public class BasicUserService implements UserService {
       throw new IllegalArgumentException(("중복된 이름입니다." + request.username()));
     }
     // 프로필 이미지 선택 생성
-    UUID profileId = null;
+    BinaryContent profile = null;
     if (request.profileImage() != null) {
-      BinaryContentDto profile = binaryContentService.create(request.profileImage());
-      profileId = profile.id();
+      // 메타정보만 db 저장
+      profile = new BinaryContent(
+          request.profileImage().contentType(),
+          request.profileImage().bytes().length
+      );
+      binaryContentRepository.save(profile);
+      // 실제 파일은 storage에 저장
+      binaryContentStorage.put(profile.getId(), request.profileImage().bytes());
     }
+
     // User 생성
-    User user = new User(request.username(), request.email(), request.password(), profileId);
+    User user = new User(request.username(), request.email(), request.password(), profile);
+    // UserStatus 자동 생성
+    user.initUserStatus();
+
     userRepository.save(user);
 
-    // UserStatus 자동 생성
-    UserStatus userStatus = new UserStatus(user.getId());
-    userStatusRepository.save(userStatus);
-    return toDto(user, userStatus);
+    return userMapper.toDto(user); //UserStatus도 cascade로 자동 저장
   }
 
   //Read
   @Override
   public UserDto findById(UUID userId) {
     User user = findUserOrThrow(userId);
-    UserStatus userStatus = findUserStatusOrThrow(userId);
 
-    return toDto(user, userStatus);
+    return userMapper.toDto(user);
   }
 
   //Read all
   @Override
   public List<UserDto> findAll() {
     return userRepository.findAll().stream()
-        .map(user -> {
-          UserStatus userStatus = findUserStatusOrThrow(user.getId());
-
-          return toDto(user, userStatus);
-        })
+        .map(userMapper::toDto)
         .toList();
   }
 
   //Update
+  @Transactional
   @Override
   public UserDto update(UUID userId, UserUpdateRequest request) {
     User user = findUserOrThrow(userId);
-    UserStatus userStatus = findUserStatusOrThrow(userId);
-
-    // 선택적 프로필 이미지 교체. 이미지가 바뀌지 않을 때를 고려해 newProfileId에 기존 id값 저장
-    UUID newProfileId = user.getProfileId();
 
     if (request.newProfileImage() != null) {
-      if (user.getProfileId() != null) {
-        binaryContentService.delete(user.getProfileId());
+      if (user.getProfile() != null) {
+        binaryContentRepository.delete(user.getProfile());
       }
-      BinaryContentDto newProfile = binaryContentService.create(request.newProfileImage());
-      newProfileId = newProfile.id();
+      BinaryContent newProfile = new BinaryContent(
+          request.newProfileImage().contentType(),
+          request.newProfileImage().bytes().length
+      );
+      binaryContentRepository.save(newProfile);
+      binaryContentStorage.put(newProfile.getId(), request.newProfileImage().bytes());
+      user.updateUserProfile(newProfile);
     }
-    // if문을 거쳐 새 이미지가 들어오면 newProfileId에 새 id를 넣고, 아니면 이전 id 그대로
 
     // 중복 이메일 검증
-    if (!user.getUserEmail().equals(request.newEmail()) && userRepository.existByEmail(
+    if (!user.getEmail().equals(request.newEmail()) && userRepository.existsByEmail(
         request.newEmail())) {
       throw new IllegalArgumentException(("사용중인 이메일입니다." + request.newEmail()));
     }
     // 중복 이름 검증
-    if (!user.getUserName().equals(request.newUsername())
+    if (!user.getUsername().equals(request.newUsername())
         && userRepository.existsByUsername(request.newUsername())) {
       throw new IllegalArgumentException(("사용중인 이름입니다." + request.newUsername()));
     }
@@ -118,25 +116,23 @@ public class BasicUserService implements UserService {
     user.updateUserName(request.newUsername());
     user.updateUserEmail(request.newEmail());
     user.updatePassword(request.newPassword());
-    user.updateUserProfile(newProfileId);
 
-    return toDto(userRepository.save(user), userStatus);
+    return userMapper.toDto(user);
   }
 
   //Delete
+  @Transactional
   @Override
   public void delete(UUID userId) {
     User user = findUserOrThrow(userId);
 
     //프로필 이미지 삭제
-    if (user.getProfileId() != null) {
-      binaryContentService.delete(user.getProfileId());
+    if (user.getProfile() != null) {
+      binaryContentStorage.delete(user.getProfile().getId());
+      binaryContentRepository.deleteById(user.getProfile().getId());
     }
 
-    //스테이터스 삭제
-    userStatusRepository.deleteByUserId(userId);
-
-    userRepository.delete(userId);
+    userRepository.deleteById(userId); //JPA가 UserStatus도 cascade 삭제
   }
 
   // 유저 아이디 검증 로직
@@ -145,8 +141,4 @@ public class BasicUserService implements UserService {
         .orElseThrow(() -> new NoSuchElementException("해당하는 유저가 없습니다." + userId));
   }
 
-  private UserStatus findUserStatusOrThrow(UUID userId) {
-    return userStatusRepository.findByUserId(userId)
-        .orElseThrow(() -> new NoSuchElementException(("유저 스테이터스 정보가 없습니다." + userId)));
-  }
 }
