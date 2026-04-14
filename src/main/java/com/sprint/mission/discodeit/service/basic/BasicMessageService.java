@@ -16,14 +16,11 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
-import java.nio.ByteBuffer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
@@ -102,7 +99,6 @@ public class BasicMessageService implements MessageService {
       binaryContentRepository.deleteAll(message.getAttachments());
       //컬렉션 비우기
       message.getAttachments().clear();
-      ;
 
       // 새파일 등록
       request.attachments().forEach(attachmentRequest -> {
