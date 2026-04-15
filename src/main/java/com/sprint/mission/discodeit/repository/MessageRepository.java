@@ -33,6 +33,17 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
   Optional<Message> findTopByChannel_IdOrderByCreatedAtDesc(UUID channelId);
 
+  // 채널 ID 목록으로 각 채널의 마지막 메시지 한번에 조회
+  @Query("""
+      SELECT m FROM Message m
+      WHERE m.channel.id IN :channelIds
+      AND m.createdAt = (
+          SELECT MAX(m2.createdAt) FROM Message m2
+          WHERE m2.channel.id = m.channel.id
+      )
+      """)
+  List<Message> findLastMessagesByChannelIds(List<UUID> channelIds);
+
   List<Message> findAllByChannel_Id(UUID channelId);
 
   void deleteAllByChannel_Id(UUID channelId);

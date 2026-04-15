@@ -21,6 +21,14 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
       "WHERE rs.user.id = :userId")
   List<ReadStatus> findAllByUserIdWithChannel(UUID userId);
 
+  // 채널 ID 목록으로 참여자 한번에 조회
+  @Query("""
+      SELECT rs FROM ReadStatus rs
+      JOIN FETCH rs.user
+      WHERE rs.channel.id IN :channelIds
+      """)
+  List<ReadStatus> findAllByChannelIds(List<UUID> channelIds);
+
   void deleteAllByChannel_Id(UUID channelId);
 
 }

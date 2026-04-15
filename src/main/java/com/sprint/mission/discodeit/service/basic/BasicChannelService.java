@@ -6,14 +6,19 @@ import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import java.time.Instant;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +34,7 @@ public class BasicChannelService implements ChannelService {
 
   private final ChannelRepository channelRepository;
   private final ReadStatusRepository readStatusRepository;
+  private final MessageRepository messageRepository;
   private final ChannelMapper channelMapper;
   private final UserRepository userRepository;
 
@@ -58,21 +64,22 @@ public class BasicChannelService implements ChannelService {
       readStatusRepository.save(readStatus);
     });
 
-    return channelMapper.toDto(channel);
+    return toChannelDto(channel);
   }
 
 
   //read
   @Override
   public ChannelDto findById(UUID channelId) {
-    return channelMapper.toDto(findChannelOrThrow(channelId));
+    Channel channel = findChannelOrThrow(channelId);
+    return toChannelDto(channel);
   }
 
   //readAll
   @Override
   public List<ChannelDto> findAll() {
     return channelRepository.findAll().stream()
-        .map(channelMapper::toDto)
+        .map(this::toChannelDto)
         .toList();
   }
 
@@ -83,13 +90,13 @@ public class BasicChannelService implements ChannelService {
         .map(rs -> rs.getChannel().getId())
         .toList();
 
-    return channelRepository.findAll().stream()
-        .filter(channel ->
-            channel.getType() == ChannelType.PUBLIC //public은 전체
-                || myChannelIds.contains(channel.getId()) //private는 참여한것만
-        )
-        .map(channelMapper::toDto)
-        .toList();
+    List<Channel> channels = myChannelIds.isEmpty()
+        ? channelRepository.findAll().stream()
+        .filter(c -> c.getType() == ChannelType.PUBLIC)
+        .toList()
+        : channelRepository.findAllPublicOrIn(myChannelIds);
+
+    return toChannelDtos(channels);
   }
 
   //update
@@ -105,7 +112,7 @@ public class BasicChannelService implements ChannelService {
     channel.updateChannelName(request.newName());
     channel.updateChannelDescription(request.newDescription());
 
-    return channelMapper.toDto(channel);
+    return toChannelDto(channel);
   }
 
   //delete
@@ -120,5 +127,63 @@ public class BasicChannelService implements ChannelService {
   private Channel findChannelOrThrow(UUID channelId) {
     return channelRepository.findById(channelId)
         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+  }
+
+  //participants 조회 로직
+  private List<User> findParticipants(Channel channel) {
+    return channel.getType() == ChannelType.PRIVATE
+        ? readStatusRepository.findAllByChannel_Id(channel.getId())
+        .stream()
+        .map(ReadStatus::getUser)
+        .toList()
+        : null;
+  }
+
+  //lastMessageAt 조회 로직
+  private Instant findLastMessageAt(Channel channel) {
+    return messageRepository
+        .findTopByChannel_IdOrderByCreatedAtDesc(channel.getId())
+        .map(Message::getCreatedAt)
+        .orElse(null);
+  }
+
+  // channel, participants, lastMessageAt 단건 변환
+  private ChannelDto toChannelDto(Channel channel) {
+    return channelMapper.toDto(channel, findParticipants(channel), findLastMessageAt(channel));
+  }
+
+  // 다건 변환
+  private List<ChannelDto> toChannelDtos(List<Channel> channels) {
+    List<UUID> channelIds = channels.stream()
+        .map(Channel::getId)
+        .toList();
+
+    // 참여자 벌크 조회 → channelId로 그룹핑
+    Map<UUID, List<User>> participantsMap = readStatusRepository
+        .findAllByChannelIds(channelIds)
+        .stream()
+        .collect(Collectors.groupingBy(
+            rs -> rs.getChannel().getId(),
+            Collectors.mapping(ReadStatus::getUser, Collectors.toList())
+        ));
+
+    // 마지막 메시지 벌크 조회 → channelId로 그룹핑
+    Map<UUID, Instant> lastMessageAtMap = messageRepository
+        .findLastMessagesByChannelIds(channelIds)
+        .stream()
+        .collect(Collectors.toMap(
+            m -> m.getChannel().getId(),
+            Message::getCreatedAt
+        ));
+
+    return channels.stream()
+        .map(channel -> {
+          List<User> participants = channel.getType() == ChannelType.PRIVATE
+              ? participantsMap.getOrDefault(channel.getId(), List.of())
+              : null;
+          Instant lastMessageAt = lastMessageAtMap.get(channel.getId());
+          return channelMapper.toDto(channel, participants, lastMessageAt);
+        })
+        .toList();
   }
 }
