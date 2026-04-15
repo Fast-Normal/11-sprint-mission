@@ -16,7 +16,9 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -55,7 +57,7 @@ public class BasicMessageService implements MessageService {
       request.attachments().forEach(attachmentRequest -> {
         BinaryContent binaryContent = new BinaryContent(
             attachmentRequest.contentType(),
-            attachmentRequest.bytes().length
+            attachmentRequest.bytes()
         );
         binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(binaryContent.getId(), attachmentRequest.bytes());
@@ -74,10 +76,11 @@ public class BasicMessageService implements MessageService {
 
   //readAll
   @Override
-  public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
-    Slice<Message> slice = messageRepository
-        .findAllByChannel_IdOrderByCreatedAtDesc(channelId, pageable);
-    return pageResponseMapper.fromSlice(slice.map(messageMapper::toDto));
+  public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor,
+      Pageable pageable) {
+    Slice<Message> page = messageRepository
+        .findALLByChannelIdWithCursor(channelId, cursor, pageable);
+    return pageResponseMapper.fromSlice(page.map(messageMapper::toDto));
   }
 
   //update
@@ -104,7 +107,7 @@ public class BasicMessageService implements MessageService {
       request.attachments().forEach(attachmentRequest -> {
         BinaryContent binaryContent = new BinaryContent(
             attachmentRequest.contentType(),
-            attachmentRequest.bytes().length
+            attachmentRequest.bytes()
         );
         binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(binaryContent.getId(), attachmentRequest.bytes());

@@ -53,7 +53,7 @@ public class ReadStatusController {
       @ApiResponse(responseCode = "404", description = "Message 읽음 상태를  찾을 수 없음",
           content = @Content(schema = @Schema(example = "ReadStatus with id {readStatusId} not found")))
   })
-  @PutMapping("/{readStatusId}")
+  @PatchMapping("/{readStatusId}")
   public ResponseEntity<ReadStatusDto> update(
       @Parameter(description = "수정할 읽음 상태 ID") @PathVariable UUID readStatusId,
       @RequestBody ReadStatusUpdateRequest request) {

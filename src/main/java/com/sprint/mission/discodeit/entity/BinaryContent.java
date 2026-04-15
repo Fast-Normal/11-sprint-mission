@@ -25,11 +25,15 @@ public class BinaryContent extends BaseEntity {
   @Column(nullable = false)
   private long size;
 
+  @Column(nullable = false)
+  private byte[] bytes;
 
-  public BinaryContent(String contentType, long size) {
+
+  public BinaryContent(String contentType, byte[] bytes) {
     this.fileName = UUID.randomUUID().toString();
     this.contentType = contentType;
-    this.size = size;
+    this.bytes = bytes;
+    this.size = bytes.length;
   }
 
 

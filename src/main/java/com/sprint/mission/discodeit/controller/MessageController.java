@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -80,9 +81,10 @@ public class MessageController {
   @GetMapping
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @Parameter(description = "조회할 Channel ID") @RequestParam UUID channelId,
+      @RequestParam(required = false) Instant cursor,
       @PageableDefault(size = 50, sort = "createdAt", direction = Direction.DESC)
       Pageable pageable) {
-    return ResponseEntity.ok(messageService.findAllByChannelId(channelId, pageable));
+    return ResponseEntity.ok(messageService.findAllByChannelId(channelId, cursor, pageable));
   }
 
   // 메시지 수정

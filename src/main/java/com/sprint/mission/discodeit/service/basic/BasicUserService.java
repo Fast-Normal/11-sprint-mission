@@ -46,7 +46,7 @@ public class BasicUserService implements UserService {
       // 메타정보만 db 저장
       profile = new BinaryContent(
           request.profileImage().contentType(),
-          request.profileImage().bytes().length
+          request.profileImage().bytes()
       );
       binaryContentRepository.save(profile);
       // 실제 파일은 storage에 저장
@@ -74,7 +74,7 @@ public class BasicUserService implements UserService {
   //Read all
   @Override
   public List<UserDto> findAll() {
-    return userRepository.findAll().stream()
+    return userRepository.findAllWithDetails().stream()
         .map(userMapper::toDto)
         .toList();
   }
@@ -91,11 +91,11 @@ public class BasicUserService implements UserService {
       }
       BinaryContent newProfile = new BinaryContent(
           request.newProfileImage().contentType(),
-          request.newProfileImage().bytes().length
+          request.newProfileImage().bytes()
       );
-      binaryContentRepository.save(newProfile);
+      BinaryContent saved = binaryContentRepository.save(newProfile);
       binaryContentStorage.put(newProfile.getId(), request.newProfileImage().bytes());
-      user.updateUserProfile(newProfile);
+      user.updateUserProfile(saved);
     }
 
     // 중복 이메일 검증
@@ -133,7 +133,7 @@ public class BasicUserService implements UserService {
 
   // 유저 아이디 검증 로직
   private User findUserOrThrow(UUID userId) {
-    return userRepository.findById(userId)
+    return userRepository.findByIdWithDetails(userId)
         .orElseThrow(() -> new NoSuchElementException("해당하는 유저가 없습니다." + userId));
   }
 
