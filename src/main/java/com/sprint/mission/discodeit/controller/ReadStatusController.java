@@ -11,12 +11,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,8 +40,9 @@ public class ReadStatusController {
   @PostMapping
   public ResponseEntity<ReadStatusDto> create(
       @RequestBody ReadStatusCreateRequest request) {
-    ReadStatusDto rs = readStatusService.create(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(rs);
+    ReadStatusDto readStatus = readStatusService.create(request);
+    URI location = URI.create("api/readStatuses/" + readStatus.id());
+    return ResponseEntity.created(location).body(readStatus);
   }
 
   // 특정 채널의 메시지 수신 정보 수정
@@ -53,7 +53,7 @@ public class ReadStatusController {
       @ApiResponse(responseCode = "404", description = "Message 읽음 상태를  찾을 수 없음",
           content = @Content(schema = @Schema(example = "ReadStatus with id {readStatusId} not found")))
   })
-  @PutMapping("/{readStatusId}")
+  @PatchMapping("/{readStatusId}")
   public ResponseEntity<ReadStatusDto> update(
       @Parameter(description = "수정할 읽음 상태 ID") @PathVariable UUID readStatusId,
       @RequestBody ReadStatusUpdateRequest request) {
@@ -68,7 +68,7 @@ public class ReadStatusController {
   @GetMapping
   public ResponseEntity<List<ReadStatusDto>> findAllByUserId(
       @Parameter(description = "조회할 User ID") @RequestParam UUID userId) {
-    List<ReadStatusDto> rsList = readStatusService.findAllByUserId(userId);
-    return ResponseEntity.ok(rsList);
+    List<ReadStatusDto> readStatusList = readStatusService.findAllByUserId(userId);
+    return ResponseEntity.ok(readStatusList);
   }
 }

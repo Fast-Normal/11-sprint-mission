@@ -15,8 +15,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -58,13 +58,17 @@ public class UserController {
       );
     }
 
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(userService.create(new UserCreateRequest(
-            request.username(),
-            request.email(),
-            request.password(),
-            profileImageRequest
-        )));
+    UserCreateRequest serviceRequest = new UserCreateRequest(
+        request.username(),
+        request.email(),
+        request.password(),
+        profileImageRequest
+    );
+
+    UserDto user = userService.create(serviceRequest);
+    URI location = URI.create("/api/users/" + user.id());
+
+    return ResponseEntity.created(location).body(user);
   }
 
   // 유저 아이디로 조회

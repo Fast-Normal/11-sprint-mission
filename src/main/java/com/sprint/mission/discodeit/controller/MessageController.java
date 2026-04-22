@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,8 +13,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +69,9 @@ public class MessageController {
         request.content(),
         attachmentRequests.isEmpty() ? null : attachmentRequests
     );
-    return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(serviceRequest));
+    MessageDto message = messageService.create(serviceRequest);
+    URI location = URI.create("/api/messages/" + message.id());
+    return ResponseEntity.created(location).body(message);
   }
 
   // 특정 채널의 메시지 목록 조회
@@ -72,10 +79,12 @@ public class MessageController {
   @ApiResponse(responseCode = "200", description = "Message 목록 조회 성공",
       content = @Content(schema = @Schema(implementation = MessageDto.class)))
   @GetMapping
-  public ResponseEntity<List<MessageDto>> findAllByChannelId(
-      @Parameter(description = "조회할 Channel ID") @RequestParam UUID channelId) {
-    List<MessageDto> messages = messageService.findAllByChannelId(channelId);
-    return ResponseEntity.ok(messages);
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
+      @Parameter(description = "조회할 Channel ID") @RequestParam UUID channelId,
+      @RequestParam(required = false) Instant cursor,
+      @PageableDefault(size = 50, sort = "createdAt", direction = Direction.DESC)
+      Pageable pageable) {
+    return ResponseEntity.ok(messageService.findAllByChannelId(channelId, cursor, pageable));
   }
 
   // 메시지 수정

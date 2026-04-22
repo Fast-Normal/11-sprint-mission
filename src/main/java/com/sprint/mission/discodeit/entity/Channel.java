@@ -1,38 +1,60 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AccessLevel;
+
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
 
-
+@Entity
+@Table(name = "channels")
 @Getter
-public class Channel extends AbstractEntity {
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private String channelName;
-    private ChannelType type;
-    private String description;
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Channel extends BaseUpdatableEntity {
 
-    public Channel(ChannelType type, String channelName, String description) {
-        super();
-        this.channelName = channelName;
-        this.type = type;
-        this.description = description;
-    }
+  @Column
+  private String name;
 
-    public void updateChannelName(String channelName){
-        this.channelName = channelName;
-        timeUpdated();
-    }
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private ChannelType type;
 
-    public void updateChannelDescription(String description){
-        this.description = description;
-        timeUpdated();
-    }
+  @Column
+  private String description;
 
-    public String toString() {
-        return "channelName: " + channelName + ", type: " + type + ", description: " + description;
-    }
+  @OneToMany(mappedBy = "channel", cascade = CascadeType.ALL, orphanRemoval = true)
+  private final List<Message> messages = new ArrayList<>();
+
+  @OneToMany(mappedBy = "channel", cascade = CascadeType.ALL, orphanRemoval = true)
+  private final List<ReadStatus> readStatuses = new ArrayList<>();
+
+  public Channel(ChannelType type, String name, String description) {
+    this.name = name;
+    this.type = type;
+    this.description = description;
+  }
+
+  public void updateChannelName(String name) {
+    this.name = name;
+  }
+
+  public void updateChannelDescription(String description) {
+    this.description = description;
+  }
+
+  public String toString() {
+    return "channelName: " + name + ", type: " + type + ", description: " + description;
+  }
 
 
 }
