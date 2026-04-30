@@ -20,7 +20,6 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
 
@@ -54,12 +53,14 @@ public class BasicReadStatusService implements ReadStatusService {
 
   //Read
   @Override
+  @Transactional(readOnly = true)
   public ReadStatusDto findById(UUID readStatusId) {
     return readStatusMapper.toDto(findReadStatusOrThrow(readStatusId));
   }
 
   //Read all
   @Override
+  @Transactional(readOnly = true)
   public List<ReadStatusDto> findAll() {
     return readStatusRepository.findAll().stream()
         .map(readStatusMapper::toDto)
@@ -67,6 +68,7 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ReadStatusDto> findAllByUserId(UUID userId) {
     return readStatusRepository.findAllByUser_Id(userId).stream()
         .map(readStatusMapper::toDto)

@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.storage.local;
 
-import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -14,8 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -64,14 +61,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
   }
 
   @Override
-  public ResponseEntity<Resource> download(BinaryContentDto dto) {
-    Resource resource = new InputStreamResource(get(dto.id()));
-    return ResponseEntity.ok()
-        .header(HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"" + dto.fileName() + "\"")
-        .header(HttpHeaders.CONTENT_TYPE, dto.contentType())
-        .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(dto.size()))
-        .body(resource);
+  public Resource download(UUID id) {
+    return new InputStreamResource(get(id));
   }
 
   @Override

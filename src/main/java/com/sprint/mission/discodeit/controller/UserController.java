@@ -58,14 +58,7 @@ public class UserController {
       );
     }
 
-    UserCreateRequest serviceRequest = new UserCreateRequest(
-        request.username(),
-        request.email(),
-        request.password(),
-        profileImageRequest
-    );
-
-    UserDto user = userService.create(serviceRequest);
+    UserDto user = userService.create(request, profileImageRequest);
     URI location = URI.create("/api/users/" + user.id());
 
     return ResponseEntity.created(location).body(user);
@@ -122,12 +115,7 @@ public class UserController {
       );
     }
 
-    return ResponseEntity.ok(userService.update(userId, new UserUpdateRequest(
-        request.newUsername(),
-        request.newEmail(),
-        profileImageRequest,
-        request.newPassword()
-    )));
+    return ResponseEntity.ok(userService.update(userId, request, profileImageRequest));
   }
 
   // 특정 유저 온라인 상태 업데이트

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
@@ -19,7 +20,6 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicUserService implements UserService {
 
@@ -31,7 +31,7 @@ public class BasicUserService implements UserService {
   //create
   @Transactional
   @Override
-  public UserDto create(UserCreateRequest request) {
+  public UserDto create(UserCreateRequest request, BinaryContentCreateRequest profileImage) {
     // 중복 이메일 검증
     if (userRepository.existsByEmail(request.email())) {
       throw new IllegalArgumentException(("중복된 이메일입니다." + request.email()));
@@ -42,15 +42,15 @@ public class BasicUserService implements UserService {
     }
     // 프로필 이미지 선택 생성
     BinaryContent profile = null;
-    if (request.profileImage() != null) {
+    if (profileImage != null) {
       // 메타정보만 db 저장
       profile = new BinaryContent(
-          request.profileImage().contentType(),
-          request.profileImage().bytes()
+          profileImage.contentType(),
+          profileImage.bytes()
       );
       binaryContentRepository.save(profile);
       // 실제 파일은 storage에 저장
-      binaryContentStorage.put(profile.getId(), request.profileImage().bytes());
+      binaryContentStorage.put(profile.getId(), profileImage.bytes());
     }
 
     // User 생성
@@ -65,6 +65,7 @@ public class BasicUserService implements UserService {
 
   //Read
   @Override
+  @Transactional(readOnly = true)
   public UserDto findById(UUID userId) {
     User user = findUserOrThrow(userId);
 
@@ -73,6 +74,7 @@ public class BasicUserService implements UserService {
 
   //Read all
   @Override
+  @Transactional(readOnly = true)
   public List<UserDto> findAll() {
     return userRepository.findAllWithDetails().stream()
         .map(userMapper::toDto)
@@ -82,19 +84,20 @@ public class BasicUserService implements UserService {
   //Update
   @Transactional
   @Override
-  public UserDto update(UUID userId, UserUpdateRequest request) {
+  public UserDto update(UUID userId, UserUpdateRequest request,
+      BinaryContentCreateRequest profileImage) {
     User user = findUserOrThrow(userId);
 
-    if (request.newProfileImage() != null) {
+    if (profileImage != null) {
       if (user.getProfile() != null) {
         binaryContentRepository.delete(user.getProfile());
       }
       BinaryContent newProfile = new BinaryContent(
-          request.newProfileImage().contentType(),
-          request.newProfileImage().bytes()
+          profileImage.contentType(),
+          profileImage.bytes()
       );
       BinaryContent saved = binaryContentRepository.save(newProfile);
-      binaryContentStorage.put(newProfile.getId(), request.newProfileImage().bytes());
+      binaryContentStorage.put(newProfile.getId(), profileImage.bytes());
       user.updateUserProfile(saved);
     }
 

@@ -27,7 +27,6 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
 
@@ -69,12 +68,14 @@ public class BasicMessageService implements MessageService {
 
   //read
   @Override
+  @Transactional(readOnly = true)
   public MessageDto findById(UUID messageId) {
     return messageMapper.toDto(findMessageOrThrow(messageId));
   }
 
   //readAll
   @Override
+  @Transactional(readOnly = true)
   public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor,
       Pageable pageable) {
     Slice<Message> page = messageRepository

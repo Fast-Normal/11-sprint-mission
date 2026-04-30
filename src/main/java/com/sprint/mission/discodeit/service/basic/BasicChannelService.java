@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicChannelService implements ChannelService {
 
@@ -70,6 +69,7 @@ public class BasicChannelService implements ChannelService {
 
   //read
   @Override
+  @Transactional(readOnly = true)
   public ChannelDto findById(UUID channelId) {
     Channel channel = findChannelOrThrow(channelId);
     return toChannelDto(channel);
@@ -77,6 +77,7 @@ public class BasicChannelService implements ChannelService {
 
   //readAll
   @Override
+  @Transactional(readOnly = true)
   public List<ChannelDto> findAll() {
     return channelRepository.findAll().stream()
         .map(this::toChannelDto)
@@ -84,6 +85,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ChannelDto> findAllByUserId(UUID userId) {
     List<UUID> myChannelIds = readStatusRepository.findAllByUserIdWithChannel(userId)
         .stream()
@@ -91,9 +93,7 @@ public class BasicChannelService implements ChannelService {
         .toList();
 
     List<Channel> channels = myChannelIds.isEmpty()
-        ? channelRepository.findAll().stream()
-        .filter(c -> c.getType() == ChannelType.PUBLIC)
-        .toList()
+        ? channelRepository.findAllByType(ChannelType.PUBLIC)
         : channelRepository.findAllPublicOrIn(myChannelIds);
 
     return toChannelDtos(channels);

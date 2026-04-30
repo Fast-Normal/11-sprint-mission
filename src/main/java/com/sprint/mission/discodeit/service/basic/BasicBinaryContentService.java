@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -16,7 +17,6 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
 
@@ -55,6 +55,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
   //Read
   @Override
+  @Transactional(readOnly = true)
   public BinaryContentDto findById(UUID binaryContentId) {
     return binaryContentMapper.toDto(binaryContentRepository.findById(binaryContentId)
         .orElseThrow(() -> new NoSuchElementException("컨텐츠를 찾을 수 없습니다.")));
@@ -62,6 +63,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
   //Read all
   @Override
+  @Transactional(readOnly = true)
   public List<BinaryContentDto> findAllByIdIn(List<UUID> ids) {
     return binaryContentRepository.findAllById(ids)
         .stream()
@@ -78,5 +80,13 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     binaryContentStorage.delete(binaryContentId);
     binaryContentRepository.deleteById(binaryContentId);
+  }
+
+  //Download
+  @Override
+  @Transactional(readOnly = true)
+  public Resource download(UUID binaryContentId) {
+    BinaryContentDto dto = findById(binaryContentId);
+    return binaryContentStorage.download(dto.id());
   }
 }

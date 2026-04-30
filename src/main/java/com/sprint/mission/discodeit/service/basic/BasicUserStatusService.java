@@ -18,7 +18,6 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicUserStatusService implements UserStatusService {
 
@@ -47,6 +46,7 @@ public class BasicUserStatusService implements UserStatusService {
 
   //Read
   @Override
+  @Transactional(readOnly = true)
   public UserStatusDto findById(UUID userStatusId) {
     UserStatus userStatus = findUserStatusOrThrow(userStatusId);
 
@@ -54,6 +54,7 @@ public class BasicUserStatusService implements UserStatusService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public UserStatusDto findByUserId(UUID userId) {
     UserStatus userStatus = userStatusRepository.findByUser_Id(userId)
         .orElseThrow(() -> new NoSuchElementException(("유저 스테이터스가 없습니다: " + userId)));
@@ -62,6 +63,7 @@ public class BasicUserStatusService implements UserStatusService {
 
   //Read all
   @Override
+  @Transactional(readOnly = true)
   public List<UserStatusDto> findAll() {
     return userStatusRepository.findAll().stream()
         .map(userStatusMapper::toDto)

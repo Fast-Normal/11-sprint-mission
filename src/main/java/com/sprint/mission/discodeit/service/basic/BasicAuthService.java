@@ -16,7 +16,6 @@ import java.util.NoSuchElementException;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
 

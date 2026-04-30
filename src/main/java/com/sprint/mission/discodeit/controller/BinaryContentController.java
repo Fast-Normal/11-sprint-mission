@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,7 +59,13 @@ public class BinaryContentController {
   @GetMapping("/{binaryContentId}/download")
   public ResponseEntity<?> download(
       @Parameter(description = "다운로드할 첨부 파일 ID") @PathVariable UUID binaryContentId) {
+    Resource resource = binaryContentService.download(binaryContentId);
     BinaryContentDto dto = binaryContentService.findById(binaryContentId);
-    return binaryContentStorage.download(dto);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + dto.fileName() + "\"")
+        .header(HttpHeaders.CONTENT_TYPE, dto.contentType())
+        .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(dto.size()))
+        .body(resource);
   }
 }
