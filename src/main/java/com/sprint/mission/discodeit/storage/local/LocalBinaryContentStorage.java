@@ -9,12 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "local")
 public class LocalBinaryContentStorage implements BinaryContentStorage {
@@ -62,7 +64,10 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @Override
   public Resource download(UUID id) {
-    return new InputStreamResource(get(id));
+    log.debug("스토리지에서 파일 읽기 시작 - id: {}", id);
+    Resource resource = new InputStreamResource(get(id));
+    log.debug("스토리지에서 파일 읽기 완료 - id: {}", id);
+    return resource;
   }
 
   @Override

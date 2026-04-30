@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
@@ -17,7 +18,9 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
@@ -42,28 +46,30 @@ public class BasicMessageService implements MessageService {
   @Transactional
   @Override
   public MessageDto create(MessageCreateRequest request) {
+    log.debug("메시지 생성 시작 - channelId: {}, authorId: {}", request.channelId(), request.authorId());
     // 유저 검증
     User user = userRepository.findById(request.authorId())
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 유저입니다: " + request.authorId()));
+        .orElseThrow(() -> {
+          log.warn("존재하지 않는 유저 - authorId: {}", request.authorId());
+          return new NoSuchElementException("존재하지 않는 유저입니다: " + request.authorId());
+        });
     // 채널 검증
     Channel channel = channelRepository.findById(request.channelId())
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다: " + request.channelId()));
+        .orElseThrow(() -> {
+          log.warn("존재하지 않는 채널 - channelId: {}", request.channelId());
+          return new NoSuchElementException("존재하지 않는 채널입니다: " + request.channelId());
+        });
 
     Message message = new Message(user, channel, request.content());
 
     if (request.attachments() != null && !request.attachments().isEmpty()) {
-      request.attachments().forEach(attachmentRequest -> {
-        BinaryContent binaryContent = new BinaryContent(
-            attachmentRequest.contentType(),
-            attachmentRequest.bytes()
-        );
-        binaryContentRepository.save(binaryContent);
-        binaryContentStorage.put(binaryContent.getId(), attachmentRequest.bytes());
-        message.getAttachments().add(binaryContent);
-      });
+      request.attachments().forEach(attachmentRequest ->
+          message.getAttachments().add(saveAttachment(attachmentRequest))
+      );
     }
-
-    return messageMapper.toDto(messageRepository.save(message));
+    Message saved = messageRepository.save(message);
+    log.info("메시지 생성 완료 - messageId: {}", message.getId());
+    return messageMapper.toDto(saved);
   }
 
   //read
@@ -87,34 +93,23 @@ public class BasicMessageService implements MessageService {
   @Transactional
   @Override
   public MessageDto update(UUID messageId, MessageUpdateRequest request) {
+    log.debug("메시지 업데이트 시작 - messageId: {}", messageId);
     Message message = findMessageOrThrow(messageId);
     if (request.newContent() == null || request.newContent().trim().isEmpty()) {
+      log.warn("메시지 내용 없음 - messageId: {}", messageId);
       throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
     }
     message.updateContent(request.newContent());
 
     //첨부파일 수정
     if (request.attachments() != null) {
-      // 기존 파일 삭제 (binaryContent는 불변객체)
-      message.getAttachments().forEach(attachment ->
-          binaryContentStorage.delete(attachment.getId()));
-      //db에서 삭제
-      binaryContentRepository.deleteAll(message.getAttachments());
-      //컬렉션 비우기
+      deleteAttachments(message.getAttachments());
       message.getAttachments().clear();
-
-      // 새파일 등록
-      request.attachments().forEach(attachmentRequest -> {
-        BinaryContent binaryContent = new BinaryContent(
-            attachmentRequest.contentType(),
-            attachmentRequest.bytes()
-        );
-        binaryContentRepository.save(binaryContent);
-        binaryContentStorage.put(binaryContent.getId(), attachmentRequest.bytes());
-        message.getAttachments().add(binaryContent);
-      });
+      request.attachments().forEach(attachmentRequest ->
+          message.getAttachments().add(saveAttachment(attachmentRequest))
+      );
     }
-
+    log.info("메시지 업데이트 완료 - messageId: {}", message.getId());
     return messageMapper.toDto(message);
   }
 
@@ -122,17 +117,40 @@ public class BasicMessageService implements MessageService {
   @Transactional
   @Override
   public void delete(UUID messageId) {
+    log.debug("메시지 삭제 시작 - messageId: {}", messageId);
     Message message = findMessageOrThrow(messageId);
 
     //binaryContent 삭제
-    message.getAttachments().forEach(attachment ->
-        binaryContentStorage.delete(attachment.getId()));
-    binaryContentRepository.deleteAll(message.getAttachments());
+    deleteAttachments(message.getAttachments());
     messageRepository.deleteById(messageId);
+    log.info("메시지 삭제 완료 - messageId: {}", messageId);
   }
 
   private Message findMessageOrThrow(UUID messageId) {
     return messageRepository.findById(messageId)
-        .orElseThrow(() -> new NoSuchElementException("메시지가 없습니다." + messageId));
+        .orElseThrow(() -> {
+          log.warn("메시지 존재하지 않음 - messageId: {}", messageId);
+          return new NoSuchElementException("메시지가 없습니다." + messageId);
+        });
+  }
+
+  private BinaryContent saveAttachment(BinaryContentCreateRequest attachmentRequest) {
+    log.debug("첨부파일 저장 시작");
+    BinaryContent binaryContent = new BinaryContent(
+        attachmentRequest.contentType(),
+        attachmentRequest.bytes()
+    );
+    binaryContentRepository.save(binaryContent);
+    binaryContentStorage.put(binaryContent.getId(), attachmentRequest.bytes());
+    log.debug("첨부파일 저장 완료 - attachmentId: {}", binaryContent.getId());
+    return binaryContent;
+  }
+
+  // 삭제
+  private void deleteAttachments(List<BinaryContent> attachments) {
+    log.debug("첨부파일 삭제 시작");
+    attachments.forEach(attachment -> binaryContentStorage.delete(attachment.getId()));
+    binaryContentRepository.deleteAll(attachments);
+    log.debug("첨부파일 삭제 완료 - 삭제 개수: {}", attachments.size());
   }
 }

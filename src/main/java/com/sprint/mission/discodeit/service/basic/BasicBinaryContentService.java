@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
@@ -33,12 +35,15 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Transactional
   @Override
   public BinaryContentDto create(BinaryContentCreateRequest request) {
+    log.debug("첨부파일 업로드 시작");
     // 용량 제한
     if (request.bytes().length > MAX_FILE_SIZE) {
+      log.warn("파일 크기 초과 최대 10MB - size: {}", request.bytes().length);
       throw new IllegalArgumentException("파일 크기 초과: 최대 10MB");
     }
     // 확장자 제한
     if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
+      log.warn("허용되지 않는 확장자 - contentType: {}", request.contentType());
       throw new IllegalArgumentException("허용되지 않는 확장자: " + request.contentType());
     }
 
@@ -50,6 +55,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     binaryContentRepository.save(binaryContent);
     binaryContentStorage.put(binaryContent.getId(), request.bytes());
 
+    log.info("첨부파일 업로드 완료 - binaryContentId: {}", binaryContent.getId());
     return binaryContentMapper.toDto(binaryContent);
   }
 
@@ -57,8 +63,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Override
   @Transactional(readOnly = true)
   public BinaryContentDto findById(UUID binaryContentId) {
-    return binaryContentMapper.toDto(binaryContentRepository.findById(binaryContentId)
-        .orElseThrow(() -> new NoSuchElementException("컨텐츠를 찾을 수 없습니다.")));
+    return binaryContentMapper.toDto(findBinaryContentOrThrow(binaryContentId));
   }
 
   //Read all
@@ -75,18 +80,29 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Transactional
   @Override
   public void delete(UUID binaryContentId) {
-    binaryContentRepository.findById(binaryContentId)
-        .orElseThrow(() -> new NoSuchElementException("컨텐츠를 찾을 수 없습니다." + binaryContentId));
-
+    log.debug("파일 삭제 시작 - binaryContentId: {}", binaryContentId);
+    findBinaryContentOrThrow(binaryContentId);
     binaryContentStorage.delete(binaryContentId);
     binaryContentRepository.deleteById(binaryContentId);
+    log.info("파일 삭제 완료 - binaryContentId: {}", binaryContentId);
   }
 
   //Download
   @Override
   @Transactional(readOnly = true)
   public Resource download(UUID binaryContentId) {
+    log.debug("파일 다운로드 시작 - binaryContentId: {}", binaryContentId);
     BinaryContentDto dto = findById(binaryContentId);
-    return binaryContentStorage.download(dto.id());
+    Resource resource = binaryContentStorage.download(dto.id());
+    log.info("파일 다운로드 완료 - binaryContentId: {}", binaryContentId);
+    return resource;
+  }
+
+  private BinaryContent findBinaryContentOrThrow(UUID binaryContentId) {
+    return binaryContentRepository.findById(binaryContentId)
+        .orElseThrow(() -> {
+          log.warn("컨텐츠를 찾을 수 없음 - binaryContentId: {}", binaryContentId);
+          return new NoSuchElementException("컨텐츠를 찾을 수 없습니다." + binaryContentId);
+        });
   }
 }

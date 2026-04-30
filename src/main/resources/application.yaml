@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: discodeit
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      maxFileSize: 10MB # 파일 하나의 최대 크기
+      maxRequestSize: 30MB  # 한 번에 최대 업로드 가능 용량
+    hikari:
+      health-check-properties:
+        connectivityCheckTimeoutMs: 1000
+        expected99thPercentileMs: 10
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    show-sql: true
+  sql:
+    init:
+      mode: never
+  security:
+    user:
+      name: actuator
+      password: actuator
+      roles: ACTUATOR_ADMIN
+
+logging:
+  level:
+    root: info
+
+discodeit:
+  storage:
+    type: local
+    local:
+      root-path: .storage
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    path: /docs
+    enabled: true
+    tagsSorter: alpha
+    operations-sorter: alpha
+    display-request-duration: true
+    url: /api=docs
+  default-produces-media-type: application/json
+
+management:
+  endpoint:
+    health:
+      group:
+        customHealth:
+          include: diskSpace, ping, externalApi
+          show-components: always
+      show-details: always
+      db:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+        exclude: ''
+  health:
+    externalApi:
+      enabled: true
+    httpbin:
+      enabled: true
+    defaults:
+      enabled: true
