@@ -4,10 +4,10 @@ import com.sprint.mission.discodeit.exception.ErrorCode;
 import java.util.Map;
 import java.util.UUID;
 
-public class UserStatusNotFoundException extends UserStatusException {
+public class UserStatusNotFoundByUserIdException extends UserStatusException {
 
-  public UserStatusNotFoundException(UUID userStatusId) {
+  public UserStatusNotFoundByUserIdException(UUID userId) {
     super(ErrorCode.USER_STATUS_NOT_FOUND,
-        Map.of("userStatusId", userStatusId));
+        Map.of("userId", userId));
   }
 }

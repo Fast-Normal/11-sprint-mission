@@ -1,5 +1,8 @@
 package com.sprint.mission.discodeit.storage.local;
 
+import com.sprint.mission.discodeit.exception.storage.StorageDeleteFailedException;
+import com.sprint.mission.discodeit.exception.storage.StorageFileNotFoundException;
+import com.sprint.mission.discodeit.exception.storage.StorageSaveFailedException;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -34,7 +37,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     try {
       Files.createDirectories(root);
     } catch (IOException e) {
-      throw new IllegalArgumentException("스토리지 루트 디렉토리 생성 실패", e);
+      throw new RuntimeException("스토리지 루트 디렉토리 생성 실패", e);
     }
   }
 
@@ -48,7 +51,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     try (OutputStream os = Files.newOutputStream(path)) {
       os.write(bytes);
     } catch (IOException e) {
-      throw new RuntimeException("파일 저장 실패: " + id, e);
+      throw new StorageSaveFailedException(id);
     }
     return id;
   }
@@ -58,7 +61,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     try {
       return Files.newInputStream(resolvePath(id));
     } catch (IOException e) {
-      throw new RuntimeException("파일 조회 실패: " + id, e);
+      throw new StorageFileNotFoundException(id);
     }
   }
 
@@ -75,7 +78,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     try {
       Files.deleteIfExists(resolvePath(id));
     } catch (IOException e) {
-      throw new RuntimeException("파일 삭제 실패: " + id, e);
+      throw new StorageDeleteFailedException(id);
     }
   }
 

@@ -9,6 +9,9 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateDeniedException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -17,7 +20,6 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import java.time.Instant;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +67,7 @@ public class BasicChannelService implements ChannelService {
       User user = userRepository.findById(userId)
           .orElseThrow(() -> {
             log.warn("존재하지 않는 유저 - userId: {}", userId);
-            return new NoSuchElementException("존재하지 않는 유저입니다." + userId);
+            return new UserNotFoundException(userId);
           });
       ReadStatus readStatus = new ReadStatus(user, channel);
       readStatusRepository.save(readStatus);
@@ -117,7 +119,7 @@ public class BasicChannelService implements ChannelService {
 
     if (channel.getType() == ChannelType.PRIVATE) {
       log.warn("PRIVATE 채널은 수정할 수 없음 - channelId: {}", channelId);
-      throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
+      throw new PrivateChannelUpdateDeniedException(channelId);
     }
 
     channel.updateChannelName(request.newName());
@@ -143,7 +145,7 @@ public class BasicChannelService implements ChannelService {
     return channelRepository.findById(channelId)
         .orElseThrow(() -> {
           log.warn("존재하지 않는 채널 - channelId: {}", channelId);
-          return new IllegalArgumentException("존재하지 않는 채널입니다.");
+          return new ChannelNotFoundException(channelId);
         });
   }
 

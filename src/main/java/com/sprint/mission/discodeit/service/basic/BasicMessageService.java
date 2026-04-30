@@ -9,6 +9,10 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageContentEmptyException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -25,7 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,13 +54,13 @@ public class BasicMessageService implements MessageService {
     User user = userRepository.findById(request.authorId())
         .orElseThrow(() -> {
           log.warn("존재하지 않는 유저 - authorId: {}", request.authorId());
-          return new NoSuchElementException("존재하지 않는 유저입니다: " + request.authorId());
+          return new UserNotFoundException(request.authorId());
         });
     // 채널 검증
     Channel channel = channelRepository.findById(request.channelId())
         .orElseThrow(() -> {
           log.warn("존재하지 않는 채널 - channelId: {}", request.channelId());
-          return new NoSuchElementException("존재하지 않는 채널입니다: " + request.channelId());
+          return new ChannelNotFoundException(request.channelId());
         });
 
     Message message = new Message(user, channel, request.content());
@@ -97,7 +100,7 @@ public class BasicMessageService implements MessageService {
     Message message = findMessageOrThrow(messageId);
     if (request.newContent() == null || request.newContent().trim().isEmpty()) {
       log.warn("메시지 내용 없음 - messageId: {}", messageId);
-      throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
+      throw new MessageContentEmptyException();
     }
     message.updateContent(request.newContent());
 
@@ -130,7 +133,7 @@ public class BasicMessageService implements MessageService {
     return messageRepository.findById(messageId)
         .orElseThrow(() -> {
           log.warn("메시지 존재하지 않음 - messageId: {}", messageId);
-          return new NoSuchElementException("메시지가 없습니다." + messageId);
+          return new MessageNotFoundException(messageId);
         });
   }
 

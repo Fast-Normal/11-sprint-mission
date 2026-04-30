@@ -36,3 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 /file-data-map/
+/.storage/
+/grafana-data/
+/.logs/discodeit.log
+/.logs/

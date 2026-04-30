@@ -30,7 +30,16 @@ public enum ErrorCode {
 
   // UserStatus
   USER_STATUS_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 UserStatus입니다."),
-  USER_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "유저 스테이터스가 없습니다.");
+  USER_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "유저 스테이터스가 없습니다."),
+
+  // storage
+  STORAGE_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
+  STORAGE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
+  STORAGE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다."),
+
+  // 기타
+  VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "유효성 검사 실패"),
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
 
   private final HttpStatus status;
   private final String message;

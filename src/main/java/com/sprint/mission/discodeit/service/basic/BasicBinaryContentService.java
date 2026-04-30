@@ -3,6 +3,9 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.binaryContent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.binaryContent.FileSizeExceededException;
+import com.sprint.mission.discodeit.exception.binaryContent.InvalidContentTypeException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -12,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,12 +41,12 @@ public class BasicBinaryContentService implements BinaryContentService {
     // 용량 제한
     if (request.bytes().length > MAX_FILE_SIZE) {
       log.warn("파일 크기 초과 최대 10MB - size: {}", request.bytes().length);
-      throw new IllegalArgumentException("파일 크기 초과: 최대 10MB");
+      throw new FileSizeExceededException(request.bytes().length);
     }
     // 확장자 제한
     if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
       log.warn("허용되지 않는 확장자 - contentType: {}", request.contentType());
-      throw new IllegalArgumentException("허용되지 않는 확장자: " + request.contentType());
+      throw new InvalidContentTypeException(request.contentType());
     }
 
     BinaryContent binaryContent = new BinaryContent(
@@ -102,7 +104,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     return binaryContentRepository.findById(binaryContentId)
         .orElseThrow(() -> {
           log.warn("컨텐츠를 찾을 수 없음 - binaryContentId: {}", binaryContentId);
-          return new NoSuchElementException("컨텐츠를 찾을 수 없습니다." + binaryContentId);
+          return new BinaryContentNotFoundException(binaryContentId);
         });
   }
 }

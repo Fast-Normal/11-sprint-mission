@@ -6,6 +6,10 @@ import com.sprint.mission.discodeit.dto.readStatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.readStatus.ReadStatusAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.readStatus.ReadStatusNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -15,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,16 +37,16 @@ public class BasicReadStatusService implements ReadStatusService {
   public ReadStatusDto create(ReadStatusCreateRequest request) {
     // 유저 검증
     User user = userRepository.findById(request.userId())
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 유저입니다." + request.userId()));
+        .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
     //채널 검증
     Channel channel = channelRepository.findById(request.channelId())
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다." + request.channelId()));
+        .orElseThrow(() -> new ChannelNotFoundException(request.channelId()));
 
     // 같은 채널의 스테이터스가 이미 존재하면 예외
     readStatusRepository.findByUser_IdAndChannel_Id(request.userId(), request.channelId())
         .ifPresent(rs -> {
-          throw new IllegalArgumentException("이미 존재하는 ReadStatus 입니다.");
+          throw new ReadStatusAlreadyExistsException(request.userId(), request.channelId());
         });
 
     ReadStatus readStatus = new ReadStatus(user, channel);
@@ -96,6 +99,6 @@ public class BasicReadStatusService implements ReadStatusService {
   // read 스테이터스 검증 로직
   private ReadStatus findReadStatusOrThrow(UUID readStatusId) {
     return readStatusRepository.findById(readStatusId)
-        .orElseThrow(() -> new NoSuchElementException("ReadStatus 정보가 없습니다." + readStatusId));
+        .orElseThrow(() -> new ReadStatusNotFoundException(readStatusId));
   }
 }
