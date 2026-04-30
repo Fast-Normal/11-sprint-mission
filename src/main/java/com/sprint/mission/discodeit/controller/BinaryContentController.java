@@ -26,7 +26,6 @@ import java.util.UUID;
 public class BinaryContentController {
 
   private final BinaryContentService binaryContentService;
-  private final BinaryContentStorage binaryContentStorage;
 
   // 단건 조회
   @Operation(summary = "첨부 파일 조회")
