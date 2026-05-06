@@ -5,7 +5,6 @@ import java.util.UUID;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-@Component
 public interface BinaryContentStorage {
 
   UUID put(UUID id, byte[] bytes);
