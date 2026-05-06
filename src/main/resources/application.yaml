@@ -55,6 +55,9 @@ springdoc:
 
 management:
   endpoint:
+    info:
+      env:
+        enabled: true # info 블록의 모든 값을 보기 위한 설정
     health:
       group:
         customHealth:
@@ -66,8 +69,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'
-        exclude: ''
+        include: health, info, metrics, loggers
   health:
     externalApi:
       enabled: true
@@ -75,3 +77,12 @@ management:
       enabled: true
     defaults:
       enabled: true
+
+info:
+  app:
+    name: Discodeit
+    version: 1.7.0
+  java:
+    version: 17
+  spring-boot:
+    version: 3.5.11

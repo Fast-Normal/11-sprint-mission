@@ -6,6 +6,7 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Component("externalApi") // /actuator/health/externalApi로 노출
@@ -42,8 +43,14 @@ public class ExternalApiHealthIndicator implements HealthIndicator {
             .withDetail("message", "External API returned non-2xx status")
             .build();
       }
+    } catch (HttpClientErrorException e) {
+      // 4xx = 서버는 살아있음 → UP
+      return Health.up()
+          .withDetail("statusCode", e.getStatusCode().value())
+          .withDetail("message", "External API is reachable (got " + e.getStatusCode() + ")")
+          .build();
     } catch (Exception e) {
-      // 예외 발생시 Down 상태로 간주
+      // 연결 자체 실패 -> Down
       return Health.down()
           .withDetail("message", "External API is not available")
           .withDetail("error", e.getMessage())
