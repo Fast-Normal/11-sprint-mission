@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -45,7 +46,7 @@ public class UserController {
   })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> create(
-      @RequestPart("userCreateRequest") UserCreateRequest request,
+      @Valid @RequestPart("userCreateRequest") UserCreateRequest request,
       @RequestPart(value = "profile", required = false) MultipartFile profileImg)
       throws IOException {
 
@@ -102,7 +103,7 @@ public class UserController {
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> update(
       @Parameter(description = "수정할 User ID") @PathVariable UUID userId,
-      @RequestPart("userUpdateRequest") UserUpdateRequest request,
+      @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
       @RequestPart(value = "profile", required = false) @Parameter(description = "수정할 User 프로필 이미지") MultipartFile newProfileImg)
       throws IOException {
 
@@ -129,7 +130,7 @@ public class UserController {
   @PatchMapping("/{userId}/userStatus")
   public ResponseEntity<UserStatusDto> updateUserStatus(
       @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
-      @RequestBody UserStatusUpdateRequest request) {
+      @Valid @RequestBody UserStatusUpdateRequest request) {
 
     UserStatusDto updated = userStatusService.updateByUserId(userId, request);
     return ResponseEntity.ok(updated);
