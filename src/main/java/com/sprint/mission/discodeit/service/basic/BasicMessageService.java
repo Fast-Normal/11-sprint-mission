@@ -87,8 +87,9 @@ public class BasicMessageService implements MessageService {
   @Transactional(readOnly = true)
   public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor,
       Pageable pageable) {
-    Slice<Message> page = messageRepository
-        .findALLByChannelIdWithCursor(channelId, cursor, pageable);
+    Slice<Message> page = cursor == null
+        ? messageRepository.findAllByChannel_IdWithDetails(channelId, pageable)  // cursor 없는 쿼리
+        : messageRepository.findALLByChannelIdWithCursor(channelId, cursor, pageable);
     return pageResponseMapper.fromSlice(page.map(messageMapper::toDto));
   }
 

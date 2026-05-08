@@ -3,6 +3,12 @@ spring:
     name: discodeit
   profiles:
     active: dev
+  boot:
+    admin:
+      client:
+        url: http://localhost:9090  # admin 서버 포트
+        instance:
+          service-url: http://localhost:8080  # discodeit 포트
   servlet:
     multipart:
       maxFileSize: 10MB # 파일 하나의 최대 크기
@@ -24,11 +30,6 @@ spring:
   sql:
     init:
       mode: never
-  security:
-    user:
-      name: actuator
-      password: actuator
-      roles: ACTUATOR_ADMIN
 
 logging:
   level:
@@ -85,4 +86,4 @@ info:
   java:
     version: 17
   spring-boot:
-    version: 3.5.11
+    version: 3.5.7

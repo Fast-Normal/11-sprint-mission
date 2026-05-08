@@ -110,9 +110,15 @@ public class BasicUserService implements UserService {
       user.updateUserProfile(saveProfileImage(profileImage));
     }
 
-    user.updateUserName(request.newUsername());
-    user.updateUserEmail(request.newEmail());
-    user.updatePassword(request.newPassword());
+    if (request.newUsername() != null) {
+      user.updateUserName(request.newUsername());
+    }
+    if (request.newEmail() != null) {
+      user.updateUserEmail(request.newEmail());
+    }
+    if (request.newPassword() != null) {
+      user.updatePassword(request.newPassword());
+    }
 
     log.info("유저 업데이트 완료 - newUsername: {}, newEmail: {}", user.getUsername(), user.getEmail());
     return userMapper.toDto(user);

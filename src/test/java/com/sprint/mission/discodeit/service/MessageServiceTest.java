@@ -198,7 +198,7 @@ class MessageServiceTest {
       PageResponse<MessageDto> expectedResponse = new PageResponse<>(
           List.of(dto), null, 1, false, null);
 
-      given(messageRepository.findALLByChannelIdWithCursor(channelId, null, pageable))
+      given(messageRepository.findAllByChannel_IdWithDetails(channelId, pageable))
           .willReturn(slice);
       given(messageMapper.toDto(message)).willReturn(dto);
       doReturn(expectedResponse).when(pageResponseMapper).fromSlice(any());
@@ -224,7 +224,7 @@ class MessageServiceTest {
       PageResponse<MessageDto> emptyResponse = new PageResponse<>(
           Collections.emptyList(), null, 0, false, null);
 
-      given(messageRepository.findALLByChannelIdWithCursor(channelId, null, pageable))
+      given(messageRepository.findAllByChannel_IdWithDetails(channelId, pageable))
           .willReturn(emptySlice);
       doReturn(emptyResponse).when(pageResponseMapper).fromSlice(any());
 
