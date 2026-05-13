@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
 import com.sprint.mission.discodeit.service.BinaryContentService;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,6 +10,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,6 @@ import java.util.UUID;
 public class BinaryContentController {
 
   private final BinaryContentService binaryContentService;
-  private final BinaryContentStorage binaryContentStorage;
 
   // 단건 조회
   @Operation(summary = "첨부 파일 조회")
@@ -57,7 +57,13 @@ public class BinaryContentController {
   @GetMapping("/{binaryContentId}/download")
   public ResponseEntity<?> download(
       @Parameter(description = "다운로드할 첨부 파일 ID") @PathVariable UUID binaryContentId) {
+    Resource resource = binaryContentService.download(binaryContentId);
     BinaryContentDto dto = binaryContentService.findById(binaryContentId);
-    return binaryContentStorage.download(dto);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + dto.fileName() + "\"")
+        .header(HttpHeaders.CONTENT_TYPE, dto.contentType())
+        .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(dto.size()))
+        .body(resource);
   }
 }

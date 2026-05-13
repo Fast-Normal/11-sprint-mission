@@ -5,6 +5,9 @@ import com.sprint.mission.discodeit.dto.userStatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userStatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.userStatus.UserStatusAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.userStatus.UserStatusNotFoundByUserIdException;
+import com.sprint.mission.discodeit.exception.userStatus.UserStatusNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -13,12 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BasicUserStatusService implements UserStatusService {
 
@@ -32,12 +33,12 @@ public class BasicUserStatusService implements UserStatusService {
   public UserStatusDto create(UserStatusCreateRequest request) {
     // 유저 검증
     User user = userRepository.findById(request.userId())
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 유저입니다." + request.userId()));
+        .orElseThrow(() -> new UserStatusNotFoundByUserIdException(request.userId()));
 
     // 같은 유저의 스테이터스가 이미 존재하면 예외
     userStatusRepository.findByUser_Id(request.userId())
         .ifPresent(us -> {
-          throw new IllegalArgumentException("이미 존재하는 UserStatus입니다.");
+          throw new UserStatusAlreadyExistsException(request.userId());
         });
 
     UserStatus userStatus = new UserStatus(user);
@@ -47,6 +48,7 @@ public class BasicUserStatusService implements UserStatusService {
 
   //Read
   @Override
+  @Transactional(readOnly = true)
   public UserStatusDto findById(UUID userStatusId) {
     UserStatus userStatus = findUserStatusOrThrow(userStatusId);
 
@@ -54,14 +56,16 @@ public class BasicUserStatusService implements UserStatusService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public UserStatusDto findByUserId(UUID userId) {
     UserStatus userStatus = userStatusRepository.findByUser_Id(userId)
-        .orElseThrow(() -> new NoSuchElementException(("유저 스테이터스가 없습니다: " + userId)));
+        .orElseThrow(() -> new UserStatusNotFoundByUserIdException(userId));
     return userStatusMapper.toDto(userStatus);
   }
 
   //Read all
   @Override
+  @Transactional(readOnly = true)
   public List<UserStatusDto> findAll() {
     return userStatusRepository.findAll().stream()
         .map(userStatusMapper::toDto)
@@ -98,12 +102,12 @@ public class BasicUserStatusService implements UserStatusService {
   // 유저 스테이터스 검증 로직
   private UserStatus findUserStatusOrThrow(UUID userStatusId) {
     return userStatusRepository.findById(userStatusId)
-        .orElseThrow(() -> new NoSuchElementException("유저 스테이터스 정보가 없습니다." + userStatusId));
+        .orElseThrow(() -> new UserStatusNotFoundException(userStatusId));
   }
 
   //스테이터스를 유저의 아이디로 검증하는 로직
   private UserStatus findUserStatusByUserIdOrThrow(UUID userId) {
     return userStatusRepository.findByUser_Id(userId)
-        .orElseThrow(() -> new NoSuchElementException(("유저 스테이터스 정보가 없습니다." + userId)));
+        .orElseThrow(() -> new UserStatusNotFoundByUserIdException(userId));
   }
 }

@@ -1,7 +1,11 @@
 package com.sprint.mission.discodeit.dto.userStatus;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record UserStatusCreateRequest(
-        UUID userId
-) {}
+    @NotNull
+    UUID userId
+) {
+
+}

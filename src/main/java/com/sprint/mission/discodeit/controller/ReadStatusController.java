@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,7 @@ public class ReadStatusController {
   })
   @PostMapping
   public ResponseEntity<ReadStatusDto> create(
-      @RequestBody ReadStatusCreateRequest request) {
+      @Valid @RequestBody ReadStatusCreateRequest request) {
     ReadStatusDto readStatus = readStatusService.create(request);
     URI location = URI.create("api/readStatuses/" + readStatus.id());
     return ResponseEntity.created(location).body(readStatus);
@@ -56,7 +57,7 @@ public class ReadStatusController {
   @PatchMapping("/{readStatusId}")
   public ResponseEntity<ReadStatusDto> update(
       @Parameter(description = "수정할 읽음 상태 ID") @PathVariable UUID readStatusId,
-      @RequestBody ReadStatusUpdateRequest request) {
+      @Valid @RequestBody ReadStatusUpdateRequest request) {
     ReadStatusDto updated = readStatusService.update(readStatusId, request);
     return ResponseEntity.ok(updated);
   }

@@ -12,7 +12,7 @@ import org.mapstruct.ReportingPolicy;
 public interface UserMapper {
 
   @Mapping(target = "online", expression = "java(user.getUserStatus() != null && user.getUserStatus().isOnline())")
-  @Mapping(target = "profileDto", source = "profile")
+  @Mapping(target = "profile", source = "profile")
   UserDto toDto(User user);
 
 }

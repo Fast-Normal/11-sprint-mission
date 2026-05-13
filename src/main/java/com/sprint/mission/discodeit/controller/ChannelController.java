@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,7 @@ public class ChannelController {
       content = @Content(schema = @Schema(implementation = ChannelDto.class)))
   @PostMapping("/public")
   public ResponseEntity<ChannelDto> createPublicChannel(
-      @RequestBody PublicChannelCreateRequest request) {
+      @Valid @RequestBody PublicChannelCreateRequest request) {
     ChannelDto channel = channelService.createPublicChannel(request);
     URI location = URI.create("/api/channels/public/" + channel.id());
     return ResponseEntity.created(location).body(channel);
@@ -46,7 +47,7 @@ public class ChannelController {
       content = @Content(schema = @Schema(implementation = ChannelDto.class)))
   @PostMapping("/private")
   public ResponseEntity<ChannelDto> createPrivateChannel(
-      @RequestBody PrivateChannelCreateRequest request) {
+      @Valid @RequestBody PrivateChannelCreateRequest request) {
     ChannelDto channel = channelService.createPrivateChannel(request);
     URI location = URI.create("/api/channels/private/" + channel.id());
     return ResponseEntity.created(location).body(channel);
@@ -91,7 +92,7 @@ public class ChannelController {
   @PatchMapping("/{channelId}")
   public ResponseEntity<ChannelDto> update(
       @Parameter(description = "수정할 Channel ID") @PathVariable UUID channelId,
-      @RequestBody ChannelUpdateRequest request) {
+      @Valid @RequestBody ChannelUpdateRequest request) {
     ChannelDto updated = channelService.update(channelId, request);
     return ResponseEntity.ok(updated);
   }
