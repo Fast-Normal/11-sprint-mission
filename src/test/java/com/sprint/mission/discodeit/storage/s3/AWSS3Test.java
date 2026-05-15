@@ -73,7 +73,7 @@ class AWSS3Test {
   @Order(3)
   @DisplayName("성공: PresignedUrl 생성")
   void presignedUrl() {
-    S3Presigner presigner = S3Presigner.builder()
+    try (S3Presigner presigner = S3Presigner.builder()
         .region(Region.of(props.getRegion()))
         .credentialsProvider(
             StaticCredentialsProvider.create(
@@ -82,22 +82,21 @@ class AWSS3Test {
                     props.getCredentials().getSecretKey()
                 )
             )
-        ).build();
+        ).build()) {
 
-    PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(
-        GetObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofMinutes(10))
-            .getObjectRequest(
-                GetObjectRequest.builder()
-                    .bucket(props.getS3().getBucket())
-                    .key(TEST_KEY.toString())
-                    .build()
-            ).build()
-    );
+      PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(
+          GetObjectPresignRequest.builder()
+              .signatureDuration(Duration.ofMinutes(10))
+              .getObjectRequest(
+                  GetObjectRequest.builder()
+                      .bucket(props.getS3().getBucket())
+                      .key(TEST_KEY.toString())
+                      .build()
+              ).build()
+      );
 
-    System.out.println("PresignedUrl: " + presignedRequest.url());
+      System.out.println("PresignedUrl: " + presignedRequest.url());
 
+    }
   }
-
-
 }
