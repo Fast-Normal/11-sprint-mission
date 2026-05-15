@@ -10,7 +10,7 @@ springBoot {
 }
 
 group = 'com.sprint.mission'
-version = '1.7.0'
+version = '1.2-M8'
 description = 'Sprint mission'
 
 java {
@@ -29,7 +29,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'de.codecentric:spring-boot-admin-starter-client:3.5.7'
     implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus', version: '1.12.3'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
