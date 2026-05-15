@@ -29,6 +29,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'software.amazon.awssdk:s3:2.31.7'
     implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus', version: '1.12.3'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -43,6 +44,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.h2database:h2'
+    testImplementation 'org.jeasy:easy-random-core:5.0.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
