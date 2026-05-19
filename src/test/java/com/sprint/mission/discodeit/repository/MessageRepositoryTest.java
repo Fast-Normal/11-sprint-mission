@@ -55,7 +55,7 @@ class MessageRepositoryTest {
 
     msg1 = messageRepository.save(new Message(author, channel, "첫 번째 메시지"));
     // createdAt이 동일해지지 않도록 짧게 대기
-    Thread.sleep(10);
+    Thread.sleep(100);
     msg2 = messageRepository.save(new Message(author, channel, "두 번째 메시지"));
   }
 
