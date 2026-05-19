@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.config.AwsProperties;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -27,6 +28,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Disabled("CI/로컬 환경에서 AWS 자격증명 없으면 스킵")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AWSS3Test {
 

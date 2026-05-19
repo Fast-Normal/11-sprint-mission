@@ -23,12 +23,12 @@ logging:
     org.hibernate.SQL: debug
 
 aws:
-  region: ${AWS_S3_REGION}
+  region: ${AWS_S3_REGION:test-region}
   credentials:
-    access-key: ${AWS_S3_ACCESS_KEY}
-    secret-key: ${AWS_S3_SECRET_KEY}
+    access-key: ${AWS_S3_ACCESS_KEY:test-key}
+    secret-key: ${AWS_S3_SECRET_KEY:test-secret}
   s3:
-    bucket: ${AWS_S3_BUCKET}
+    bucket: ${AWS_S3_BUCKET:test-bucket}
 
 discodeit:
   storage:
@@ -36,9 +36,9 @@ discodeit:
     local:
       root-path: /tmp/test-storage
     s3:
-      region: ${AWS_S3_REGION}
+      region: ${AWS_S3_REGION:test-region}
       credentials:
-        access-key: ${AWS_S3_ACCESS_KEY}
-        secret-key: ${AWS_S3_SECRET_KEY}
-      bucket: ${AWS_S3_BUCKET}
+        access-key: ${AWS_S3_ACCESS_KEY:test-key}
+        secret-key: ${AWS_S3_SECRET_KEY:test-secret}
+      bucket: ${AWS_S3_BUCKET:test-bucket}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
