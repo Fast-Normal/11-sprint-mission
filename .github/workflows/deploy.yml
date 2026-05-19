@@ -71,19 +71,19 @@ jobs:
 
       - name: ECS 서비스 업데이트
         run: |
-          aws ecs update-service --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }} --task-definition $NEW_REVISION --desired-count 1
+          aws ecs update-service --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }} --task-definition $NEW_REVISION --desired-count 1 --deployment-configuration "minimumHealthyPercent=0,maximumPercent=100"
           while true; do
             RUNNING=$(aws ecs describe-services \
               --cluster ${{ vars.ECS_CLUSTER }} \
               --service ${{ vars.ECS_SERVICE }} \
-              --query "services[0].runningCount" \
+              --query "services[0].deployments[?status=='PRIMARY'].runningCount | [0]" \
               --output text)
-            echo "실행 중인 태스크: $RUNNING"
+            echo "새 태스크 실행 중: $PRIMARY_RUNNING"
             if [ "$RUNNING" = "1" ]; then
-              echo "새 태스크 RUNNING 확인"
+              if [ "$PRIMARY_RUNNING" = "1" ]; then
               break
             fi
-            sleep 10
+            sleep 15
           done
 
       - name: ECS 배포 상태 확인
