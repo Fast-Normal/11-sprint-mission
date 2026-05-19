@@ -57,6 +57,9 @@ class MessageRepositoryTest {
     // createdAt이 동일해지지 않도록 짧게 대기
     Thread.sleep(100);
     msg2 = messageRepository.save(new Message(author, channel, "두 번째 메시지"));
+
+    // flush 후 재조회로 DB 실제값 동기화
+    msg2 = messageRepository.findById(msg2.getId()).get();
   }
 
   // findAllByChannel_IdOrderByCreatedAtDesc
