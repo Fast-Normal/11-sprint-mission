@@ -76,7 +76,7 @@ jobs:
             --service ${{ vars.ECS_SERVICE }} \
             --task-definition $NEW_REVISION \
             --desired-count 1 \
-            --availability-zone-rebalancing DISABLED
+            --availability-zone-rebalancing DISABLED \
             --deployment-configuration "minimumHealthyPercent=0,maximumPercent=100"
           while true; do
             RUNNING=$(aws ecs describe-services \
