@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: [ "release", "sprint8-ys" ]
+    branches: [ "release" ]
 
 env:
   ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
