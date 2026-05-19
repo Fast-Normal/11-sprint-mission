@@ -71,7 +71,13 @@ jobs:
 
       - name: ECS 서비스 업데이트
         run: |
-          aws ecs update-service --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }} --task-definition $NEW_REVISION --desired-count 1 --deployment-configuration "minimumHealthyPercent=0,maximumPercent=100"
+          aws ecs update-service \
+            --cluster ${{ vars.ECS_CLUSTER }} \
+            --service ${{ vars.ECS_SERVICE }} \
+            --task-definition $NEW_REVISION \
+            --desired-count 1 \
+            --availability-zone-rebalancing DISABLED
+            --deployment-configuration "minimumHealthyPercent=0,maximumPercent=100"
           while true; do
             RUNNING=$(aws ecs describe-services \
               --cluster ${{ vars.ECS_CLUSTER }} \
