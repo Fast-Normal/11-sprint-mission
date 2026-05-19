@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "sprint8-ys" ]
+    branches: [ "main" ]
 
 jobs:
   test:

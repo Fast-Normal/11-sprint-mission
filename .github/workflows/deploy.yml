@@ -56,6 +56,7 @@ jobs:
       - name: 기존 태스크 중단
         run: |
           aws ecs update-service --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }} --desired-count 0
+          aws ecs wait services-stable --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }}
 
       - name: ECS 서비스 업데이트
         run: |
