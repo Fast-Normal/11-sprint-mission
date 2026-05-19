@@ -79,14 +79,14 @@ jobs:
             --availability-zone-rebalancing DISABLED \
             --deployment-configuration "minimumHealthyPercent=0,maximumPercent=100"
           while true; do
-            RUNNING=$(aws ecs describe-services \
+            PRIMARY_RUNNING=$(aws ecs describe-services \
               --cluster ${{ vars.ECS_CLUSTER }} \
               --service ${{ vars.ECS_SERVICE }} \
               --query "services[0].deployments[?status=='PRIMARY'].runningCount | [0]" \
               --output text)
             echo "새 태스크 실행 중: $PRIMARY_RUNNING"
-            if [ "$RUNNING" = "1" ]; then
-              if [ "$PRIMARY_RUNNING" = "1" ]; then
+            if [ "$PRIMARY_RUNNING" = "1" ]; then
+              echo "새 태스크 RUNNING 확인"
               break
             fi
             sleep 15
