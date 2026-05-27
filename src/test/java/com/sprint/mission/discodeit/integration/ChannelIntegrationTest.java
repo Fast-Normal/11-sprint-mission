@@ -19,6 +19,7 @@ import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(webEnvironment = WebEnvironment.MOCK)
 @ActiveProfiles("test")
+@Disabled("CI/로컬 환경에서 AWS 자격증명 없으면 스킵")
 @Transactional
 @AutoConfigureMockMvc(addFilters = false)
 class ChannelIntegrationTest {

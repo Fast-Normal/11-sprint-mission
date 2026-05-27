@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,9 @@ import org.springframework.test.context.ActiveProfiles;
 @Import(JpaConfig.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class MessageRepositoryTest {
+
+  @Autowired
+  TestEntityManager em;
 
   @Autowired
   MessageRepository messageRepository;
@@ -54,9 +58,17 @@ class MessageRepositoryTest {
     );
 
     msg1 = messageRepository.save(new Message(author, channel, "첫 번째 메시지"));
+    em.flush();
+    em.clear();
+
     // createdAt이 동일해지지 않도록 짧게 대기
-    Thread.sleep(10);
+    Thread.sleep(100);
     msg2 = messageRepository.save(new Message(author, channel, "두 번째 메시지"));
+    em.flush();
+    em.clear();
+
+    // flush 후 재조회로 DB 실제값 동기화
+    msg2 = messageRepository.findById(msg2.getId()).get();
   }
 
   // findAllByChannel_IdOrderByCreatedAtDesc
