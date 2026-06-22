@@ -10,6 +10,7 @@ public enum ErrorCode {
   USER_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "중복된 이메일입니다."),
   USER_USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "중복된 이름입니다."),
   INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
+  USER_PASSWORD_ALREADY_USED(HttpStatus.CONFLICT, "현재 비밀번호와 일치합니다."),
 
   // Channel
   CHANNEL_NOT_FOUND(HttpStatus.NOT_FOUND, "채널을 찾을 수 없습니다."),

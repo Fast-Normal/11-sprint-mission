@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserPasswordAlreadyUsedException;
 import com.sprint.mission.discodeit.exception.user.UserUsernameAlreadyExistsException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -16,6 +17,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +33,7 @@ public class BasicUserService implements UserService {
   private final BinaryContentStorage binaryContentStorage;
   private final BinaryContentRepository binaryContentRepository;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   //create
   @Transactional
@@ -50,8 +53,11 @@ public class BasicUserService implements UserService {
     // 프로필 이미지 선택 생성
     BinaryContent profile = saveProfileImage(profileImage);
 
+    // 패스워드 encode
+    String encodedPassword = passwordEncoder.encode(request.password());
+
     // User 생성
-    User user = new User(request.username(), request.email(), request.password(), profile);
+    User user = new User(request.username(), request.email(), encodedPassword, profile);
     // UserStatus 자동 생성
     user.initUserStatus();
 
@@ -101,6 +107,15 @@ public class BasicUserService implements UserService {
       throw new UserUsernameAlreadyExistsException(request.newUsername());
     }
 
+    // 사용중인 패스워드인지 검증 후 업데이트
+    if (request.newPassword() != null && !passwordEncoder.matches(request.newPassword(),
+        user.getPassword())) {
+      throw new UserPasswordAlreadyUsedException();
+    } else {
+      String newEncodedPassword = passwordEncoder.encode(request.newPassword());
+      user.updatePassword(newEncodedPassword);
+    }
+
     if (profileImage != null) {
       if (user.getProfile() != null) {
         UUID oldProfileId = user.getProfile().getId();
@@ -115,9 +130,6 @@ public class BasicUserService implements UserService {
     }
     if (request.newEmail() != null) {
       user.updateUserEmail(request.newEmail());
-    }
-    if (request.newPassword() != null) {
-      user.updatePassword(request.newPassword());
     }
 
     log.info("유저 업데이트 완료 - newUsername: {}, newEmail: {}", user.getUsername(), user.getEmail());

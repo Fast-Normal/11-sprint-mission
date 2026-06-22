@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +25,15 @@ public class BasicAuthService implements AuthService {
   private final UserRepository userRepository;
   private final UserStatusRepository userStatusRepository;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   @Transactional
   @Override
   public UserDto login(LoginRequest request) {
     User user = userRepository.findByUsername(request.username())
         .orElseThrow(() -> new UserNotFoundByUsernameException(request.username()));
-    if (!user.getPassword().equals(request.password())) {
+
+    if (passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new InvalidPasswordException();
     }
 
