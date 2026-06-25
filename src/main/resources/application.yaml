@@ -94,6 +94,11 @@ management:
     defaults:
       enabled: true
 
+admin:
+  username: ${ADMIN_USERNAME:Admin}
+  email: ${ADMIN_EMAIL:Admin@admin.com}
+  password: ${ADMIN_PASSWORD}
+
 info:
   app:
     name: Discodeit

@@ -1,4 +1,4 @@
-CREATE TABLE binary_contents
+CREATE TABLE IF NOT EXISTS binary_contents
 (
     id           UUID PRIMARY KEY,
     created_at   timestamp with time zone NOT NULL,
@@ -17,6 +17,7 @@ CREATE TABLE iF NOT EXISTS users
     email      VARCHAR(100)             NOT NULL UNIQUE,
     password   VARCHAR(60)              NOT NULL,
     profile_id UUID,
+    role       VARCHAR(20)              NOT NULL,
     FOREIGN KEY (profile_id) REFERENCES binary_contents (id) ON DELETE SET NULL
 );
 
