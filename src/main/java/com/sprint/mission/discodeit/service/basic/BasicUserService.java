@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -99,6 +100,7 @@ public class BasicUserService implements UserService {
   //Update
   @Transactional
   @Override
+  @PreAuthorize("#userId == authentication.principal.userDto.id")
   public UserDto update(UUID userId, UserUpdateRequest request,
       BinaryContentCreateRequest profileImage) {
     log.debug("유저 업데이트 시작 - userId: {}, newUsername: {}, newEmail: {}", userId,
@@ -120,10 +122,11 @@ public class BasicUserService implements UserService {
     }
 
     // 사용중인 패스워드인지 검증 후 업데이트
-    if (request.newPassword() != null && !passwordEncoder.matches(request.newPassword(),
-        user.getPassword())) {
-      throw new UserPasswordAlreadyUsedException();
-    } else {
+    if (request.newPassword() != null) {
+      if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+        log.warn("기존과 동일한 비밀번호 - userId: {}", userId);
+        throw new UserPasswordAlreadyUsedException();
+      }
       String newEncodedPassword = passwordEncoder.encode(request.newPassword());
       user.updatePassword(newEncodedPassword);
     }
@@ -151,6 +154,7 @@ public class BasicUserService implements UserService {
   //Delete
   @Transactional
   @Override
+  @PreAuthorize("#userId == authentication.principal.userDto.id")
   public void delete(UUID userId) {
     log.debug("유저 삭제 시작 - userId: {}", userId);
     User user = findUserOrThrow(userId);
