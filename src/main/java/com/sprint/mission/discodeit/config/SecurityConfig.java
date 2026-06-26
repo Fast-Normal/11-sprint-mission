@@ -52,6 +52,8 @@ public class SecurityConfig {
         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
 
     http.authorizeHttpRequests(auth -> auth
+        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.ico")
+        .permitAll()
         .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()

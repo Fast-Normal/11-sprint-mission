@@ -14,4 +14,7 @@ public record UserDto(
     // password 없음
 ) {
 
+  public UserDto withOnline(boolean online) {
+    return new UserDto(id, username, email, profile, online, role);
+  }
 }
