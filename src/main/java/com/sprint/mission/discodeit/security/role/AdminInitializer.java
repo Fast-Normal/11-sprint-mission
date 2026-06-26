@@ -40,7 +40,6 @@ public class AdminInitializer implements ApplicationRunner {
           passwordEncoder.encode(adminPassword),
           null);
       admin.updateRole(Role.ADMIN);
-      admin.initUserStatus();
       userRepository.save(admin);
     } else {
       log.debug("이미 Admin 계정이 존재합니다.");

@@ -58,8 +58,6 @@ public class BasicUserService implements UserService {
 
     // User 생성
     User user = new User(request.username(), request.email(), encodedPassword, profile);
-    // UserStatus 자동 생성
-    user.initUserStatus();
 
     userRepository.save(user);
 

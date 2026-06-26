@@ -30,7 +30,6 @@ class UserRepositoryTest {
   @BeforeEach
   void setUp() {
     User user = new User("woody", "woody@test.com", "password1", null);
-    user.initUserStatus();
     savedUser = userRepository.save(user);
   }
 
@@ -92,12 +91,11 @@ class UserRepositoryTest {
 
   // findAllWithDetails (커스텀 쿼리)
   @Test
-  @DisplayName("findAllWithDetails - UserStatus를 포함한 User 목록 반환")
+  @DisplayName("findAllWithDetails - User 목록 반환")
   void findAllWithDetails_success() {
     List<User> users = userRepository.findAllWithDetails();
 
     assertThat(users).hasSize(1);
-    assertThat(users.get(0).getUserStatus()).isNotNull();
   }
 
   @Test

@@ -4,10 +4,7 @@ import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userStatus.UserStatusDto;
-import com.sprint.mission.discodeit.dto.userStatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,7 +31,6 @@ import java.util.UUID;
 public class UserController {
 
   private final UserService userService;
-  private final UserStatusService userStatusService;
 
   // 사용자 등록
   @Operation(summary = "User 등록")
@@ -117,23 +113,6 @@ public class UserController {
     }
 
     return ResponseEntity.ok(userService.update(userId, request, profileImageRequest));
-  }
-
-  // 특정 유저 온라인 상태 업데이트
-  @Operation(summary = "User 온라인 상태 업데이트")
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "User 온라인 상태가 성공적으로 업데이트됨",
-          content = @Content(schema = @Schema(implementation = UserStatusDto.class))),
-      @ApiResponse(responseCode = "404", description = "해당 User의 UserStatus를 찾을 수 없음",
-          content = @Content(schema = @Schema(example = "UserStatus with userId {userId}")))
-  })
-  @PatchMapping("/{userId}/userStatus")
-  public ResponseEntity<UserStatusDto> updateUserStatus(
-      @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
-      @Valid @RequestBody UserStatusUpdateRequest request) {
-
-    UserStatusDto updated = userStatusService.updateByUserId(userId, request);
-    return ResponseEntity.ok(updated);
   }
 
   // 유저 삭제
