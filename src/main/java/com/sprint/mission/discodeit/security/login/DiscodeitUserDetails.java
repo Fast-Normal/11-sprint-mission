@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.security.login;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -51,4 +52,21 @@ public class DiscodeitUserDetails implements UserDetails {
     return true;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    // 자기 자신을 참조시 항상 true
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof DiscodeitUserDetails details)) {
+      return false;
+    }
+
+    return Objects.equals(userDto.id(), details.userDto.id());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(userDto.id());
+  }
 }
