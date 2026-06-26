@@ -99,6 +99,9 @@ admin:
   email: ${ADMIN_EMAIL:Admin@admin.com}
   password: ${ADMIN_PASSWORD}
 
+remember-me:
+  key: ${REMEMBER_ME_KEY}
+
 info:
   app:
     name: Discodeit

@@ -5,7 +5,9 @@ import com.sprint.mission.discodeit.security.exception.DiscodeitAccessDeniedHand
 import com.sprint.mission.discodeit.security.exception.DiscodeitAuthenticationEntryPoint;
 import com.sprint.mission.discodeit.security.login.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.login.LoginSuccessHandler;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,10 +20,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -35,8 +40,12 @@ public class SecurityConfig {
   private final DiscodeitAuthenticationEntryPoint authenticationEntryPoint;
   private final DiscodeitAccessDeniedHandler accessDeniedHandler;
 
+  @Value("${remember-me.key}")
+  private String rememberMeKey;
+
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http, SessionRegistry sessionRegistry)
+  public SecurityFilterChain filterChain(HttpSecurity http, SessionRegistry sessionRegistry,
+      PersistentTokenRepository tokenRepository, UserDetailsService userDetailsService)
       throws Exception {
     http.csrf(csrf -> csrf
         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -49,6 +58,8 @@ public class SecurityConfig {
 
     http.logout(logout -> logout
         .logoutUrl("/api/auth/logout")
+        .deleteCookies("JSESSIONID", "remember-me")
+        .invalidateHttpSession(true)
         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
 
     http.authorizeHttpRequests(auth -> auth
@@ -70,6 +81,13 @@ public class SecurityConfig {
             .maximumSessions(1)
             .maxSessionsPreventsLogin(true)
             .sessionRegistry(sessionRegistry)));
+
+    http.rememberMe(rememberMe -> rememberMe
+        .rememberMeParameter("remember-me")
+        .tokenValiditySeconds(60 * 60 * 24 * 7)
+        .key(rememberMeKey)
+        .userDetailsService(userDetailsService)
+        .tokenRepository(tokenRepository));
 
     return http.build();
   }
@@ -103,5 +121,12 @@ public class SecurityConfig {
   @Bean
   public HttpSessionEventPublisher httpSessionEventPublisher() {
     return new HttpSessionEventPublisher();
+  }
+
+  @Bean
+  public PersistentTokenRepository persistentTokenRepository(DataSource dataSource) {
+    JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
+    tokenRepository.setDataSource(dataSource);
+    return tokenRepository;
   }
 }
