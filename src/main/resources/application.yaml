@@ -102,6 +102,11 @@ admin:
 remember-me:
   key: ${REMEMBER_ME_KEY}
 
+jwt:
+  key: ${JWT_SECRET_KEY}
+  access-token-expiration-minutes: 30
+  refresh-token-expiration-minutes: 10080 # 7일
+
 info:
   app:
     name: Discodeit

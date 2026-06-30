@@ -40,7 +40,9 @@ public enum ErrorCode {
 
   // AUTH
   AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "인증에 실패했습니다."),
-  ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다.");
+  ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다."),
+  JWT_SIGNATURE_INVALID(HttpStatus.UNAUTHORIZED, "토큰 서명이 유효하지 않습니다."),
+  JWT_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다.");
 
 
   private final HttpStatus status;

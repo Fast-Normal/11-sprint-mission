@@ -17,4 +17,11 @@ public class DiscodeitException extends RuntimeException {
     this.details = details != null ? details : Map.of();
     this.timestamp = Instant.now();
   }
+
+  public DiscodeitException(ErrorCode errorCode, Map<String, Object> details, Throwable cause) {
+    super(errorCode.getMessage(), cause);
+    this.errorCode = errorCode;
+    this.details = details != null ? details : Map.of();
+    this.timestamp = Instant.now();
+  }
 }

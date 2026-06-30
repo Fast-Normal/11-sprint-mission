@@ -11,6 +11,9 @@ spring:
     username: discodeit_user
     password: discodeit1234
 
+jwt:
+  key: local-dev-only-secret-key-change-in-production
+
 logging:
   level:
     com.sprint.mission.discodeit: debug
