@@ -13,6 +13,8 @@ spring:
 
 jwt:
   key: local-dev-only-secret-key-change-in-production
+  cookie:
+    secure: false # http 환경에서도 가능
 
 logging:
   level:

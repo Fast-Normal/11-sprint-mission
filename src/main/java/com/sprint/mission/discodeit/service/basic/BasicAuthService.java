@@ -6,7 +6,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.login.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.util.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,7 +42,7 @@ public class BasicAuthService implements AuthService {
           sessionRegistry.getAllSessions(details, false)
               .forEach(SessionInformation::expireNow);
         });
-    
+
     return userMapper.toDto(user);
   }
 }

@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.config;
 import com.sprint.mission.discodeit.security.csrf.SpaCsrfTokenRequestHandler;
 import com.sprint.mission.discodeit.security.exception.DiscodeitAccessDeniedHandler;
 import com.sprint.mission.discodeit.security.exception.DiscodeitAuthenticationEntryPoint;
+import com.sprint.mission.discodeit.security.login.JwtLoginSuccessHandler;
 import com.sprint.mission.discodeit.security.login.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.login.LoginSuccessHandler;
 import javax.sql.DataSource;
@@ -18,6 +19,7 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -35,7 +37,7 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-  private final LoginSuccessHandler loginSuccessHandler;
+  private final JwtLoginSuccessHandler jwtLoginSuccessHandler;
   private final LoginFailureHandler loginFailureHandler;
   private final DiscodeitAuthenticationEntryPoint authenticationEntryPoint;
   private final DiscodeitAccessDeniedHandler accessDeniedHandler;
@@ -53,7 +55,7 @@ public class SecurityConfig {
     );
     http.formLogin(login -> login
         .loginProcessingUrl("/api/auth/login")
-        .successHandler(loginSuccessHandler)
+        .successHandler(jwtLoginSuccessHandler)
         .failureHandler(loginFailureHandler));
 
     http.logout(logout -> logout
@@ -77,10 +79,7 @@ public class SecurityConfig {
         .accessDeniedHandler(accessDeniedHandler));
 
     http.sessionManagement(management -> management
-        .sessionConcurrency(concurrency -> concurrency
-            .maximumSessions(1)
-            .maxSessionsPreventsLogin(true)
-            .sessionRegistry(sessionRegistry)));
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
     http.rememberMe(rememberMe -> rememberMe
         .rememberMeParameter("remember-me")
