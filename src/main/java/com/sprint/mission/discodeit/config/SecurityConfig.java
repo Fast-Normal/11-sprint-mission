@@ -1,17 +1,15 @@
 package com.sprint.mission.discodeit.config;
 
-import com.sprint.mission.discodeit.security.csrf.SpaCsrfTokenRequestHandler;
 import com.sprint.mission.discodeit.security.exception.DiscodeitAccessDeniedHandler;
 import com.sprint.mission.discodeit.security.exception.DiscodeitAuthenticationEntryPoint;
-import com.sprint.mission.discodeit.security.filter.JwtAuthenticationFilter;
-import com.sprint.mission.discodeit.security.login.JwtLoginSuccessHandler;
+import com.sprint.mission.discodeit.security.jwt.JwtAuthenticationFilter;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.handler.JwtLoginSuccessHandler;
+import com.sprint.mission.discodeit.security.jwt.handler.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.login.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.login.LoginSuccessHandler;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetailService;
-import com.sprint.mission.discodeit.security.util.JwtTokenProvider;
-import javax.sql.DataSource;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,18 +22,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 @RequiredArgsConstructor
@@ -48,9 +39,8 @@ public class SecurityConfig {
   private final DiscodeitAccessDeniedHandler accessDeniedHandler;
   private final JwtTokenProvider jwtTokenProvider;
   private final DiscodeitUserDetailService userDetailService;
-
-  @Value("${remember-me.key}")
-  private String rememberMeKey;
+  private final JwtLogoutHandler jwtLogoutHandler;
+  private final JwtRegistry jwtRegistry;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
@@ -65,11 +55,13 @@ public class SecurityConfig {
 
     http.logout(logout -> logout
         .logoutUrl("/api/auth/logout")
-        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
+        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+        .addLogoutHandler(jwtLogoutHandler));
 
     http.authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.ico")
         .permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
@@ -112,7 +104,7 @@ public class SecurityConfig {
 
   @Bean
   public JwtAuthenticationFilter jwtAuthenticationFilter() {
-    return new JwtAuthenticationFilter(jwtTokenProvider, userDetailService);
+    return new JwtAuthenticationFilter(jwtTokenProvider, userDetailService, jwtRegistry);
   }
 
 }

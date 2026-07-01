@@ -13,4 +13,4 @@ logging:
 
 jwt:
   cookie:
-    secure: true;
+    secure: true

@@ -1,15 +1,11 @@
-package com.sprint.mission.discodeit.security.filter;
+package com.sprint.mission.discodeit.security.jwt;
 
-import com.sprint.mission.discodeit.exception.auth.JwtExpiredException;
-import com.sprint.mission.discodeit.exception.auth.JwtSignatureException;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetailService;
-import com.sprint.mission.discodeit.security.util.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +25,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtTokenProvider jwtTokenProvider;
   private final DiscodeitUserDetailService userDetailsService;
+  private final JwtRegistry jwtRegistry;
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     // Bearer 토큰 없으면 이 필터 스킵 -> doFilterInternal 호출 x
     String authorization = request.getHeader(AUTHORIZATION_HEADER);
-    return !StringUtils.hasText(authorization) || !authorization.startsWith(BEARER_PREFIX);
+    boolean skip = !StringUtils.hasText(authorization) || !authorization.startsWith(BEARER_PREFIX);
+    log.debug("shouldNotFilter - path: {}, skip: {}, header: {}",
+        request.getRequestURI(), skip, authorization);
+    return skip;
   }
 
   @Override
@@ -44,9 +44,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Bearer 이후 토큰 추출
     String token = request.getHeader(AUTHORIZATION_HEADER).substring(BEARER_PREFIX.length());
 
-    // 유효성 검사
-    if (jwtTokenProvider.validateToken(token)) {
+    log.debug("JWT 필터 실행 - path: {}", request.getRequestURI());
+    log.debug("validateToken: {}", jwtTokenProvider.validateToken(token));
+    log.debug("hasActiveToken: {}", jwtRegistry.hasActiveJwtInformationByAccessToken(token));
 
+    // 유효성 검사
+    if (jwtTokenProvider.validateToken(token) && jwtRegistry.hasActiveJwtInformationByAccessToken(
+        token)
+    ) {
       // subject(userId) 추출
       String subject = jwtTokenProvider.getSubject(token);
 

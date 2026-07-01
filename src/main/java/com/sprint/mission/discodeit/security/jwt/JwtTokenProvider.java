@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.security.util;
+package com.sprint.mission.discodeit.security.jwt;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -11,6 +11,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.sprint.mission.discodeit.exception.auth.JwtSignatureException;
 import com.sprint.mission.discodeit.exception.auth.RefreshTokenInvalidException;
+import com.sprint.mission.discodeit.security.util.DiscodeitUserDetails;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;

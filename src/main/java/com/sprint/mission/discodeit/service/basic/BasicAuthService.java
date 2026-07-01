@@ -10,22 +10,22 @@ import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.RefreshTokenRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetails;
-import com.sprint.mission.discodeit.security.util.JwtTokenProvider;
 import com.sprint.mission.discodeit.service.AuthService;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
@@ -34,6 +34,7 @@ public class BasicAuthService implements AuthService {
   private final UserMapper userMapper;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenRepository refreshTokenRepository;
+  private final JwtRegistry jwtRegistry;
 
   @PreAuthorize("hasRole('ADMIN')")
   @Transactional
@@ -45,21 +46,24 @@ public class BasicAuthService implements AuthService {
     user.updateRole(request.newRole());
     userRepository.save(user);
 
+    // 역할 변경 시 기존 토큰 모두 무효화
     refreshTokenRepository.deleteByUserId(user.getId());
+    jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+    log.info("권한 변경으로 인한 강제 로그아웃 - userId: {}", user.getId());
 
     return userMapper.toDto(user);
   }
 
   @Transactional
   @Override
-  public JwtDto refresh(String refreshToken) {
-    if (!StringUtils.hasText(refreshToken)) {
+  public JwtInformation refresh(String refreshToken) {
+    if (!StringUtils.hasText(refreshToken) ||
+        !jwtTokenProvider.validateToken(refreshToken) ||
+        !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
       throw new RefreshTokenInvalidException(Map.of("reason", "missing"));
     }
 
-    // 서명/만료 검증
-    Map<String, Object> claims = jwtTokenProvider.getClaims(refreshToken);
-    UUID userId = UUID.fromString(claims.get("sub").toString());
+    UUID userId = UUID.fromString(jwtTokenProvider.getSubject(refreshToken));
 
     // DB에 저장된 현재 유효 토큰과 일치하는지 확인
     RefreshToken saved = refreshTokenRepository.findByUserId(userId)
@@ -70,12 +74,24 @@ public class BasicAuthService implements AuthService {
         .orElseThrow(() -> new UserNotFoundException(userId));
 
     // 새 access token + refresh token 발급
-    String newAccessToken = jwtTokenProvider.generateAccessToken(userId);
-    String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
+    DiscodeitUserDetails userDetails = new DiscodeitUserDetails(userMapper.toDto(user),
+        user.getPassword());
 
-    saved.rotate(newRefreshToken, Instant.now().plus(Duration.ofDays(7)));
+    String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails);
+    String newRefreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
+    Instant newExpiry = jwtTokenProvider.getExpiration(newRefreshToken);
+
+    JwtInformation newInfo = new JwtInformation(
+        userMapper.toDto(user),
+        newAccessToken,
+        newRefreshToken,
+        newExpiry
+    );
+    jwtRegistry.rotateJwtInformation(refreshToken, newInfo);
+
+    saved.rotate(newRefreshToken, newExpiry);
     refreshTokenRepository.save(saved);
 
-    return new JwtDto(userMapper.toDto(user), newAccessToken);
+    return newInfo;
   }
 }

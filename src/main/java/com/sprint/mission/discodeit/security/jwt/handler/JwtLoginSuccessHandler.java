@@ -1,13 +1,16 @@
-package com.sprint.mission.discodeit.security.login;
+package com.sprint.mission.discodeit.security.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.auth.JwtDto;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetails;
-import com.sprint.mission.discodeit.security.util.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,9 +27,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
   private final ObjectMapper objectMapper;
   private final JwtTokenProvider jwtTokenProvider;
-
-  // JwtRegistry 구현 후 주입
-  // private final JwtRegistry jwtRegistry;
+  private final JwtRegistry jwtRegistry;
 
   @Value("${jwt.refresh-token-expiration}")
   private int refreshTokenExpiration;
@@ -41,12 +42,24 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     log.info("로그인 성공 - JWT 발급");
 
     DiscodeitUserDetails userDetails = (DiscodeitUserDetails) authentication.getPrincipal();
+    UUID userId = userDetails.getUserDto().id();
+
+    // 동시 로그인 제한: 기존 세션 무효화
+    if (jwtRegistry.hasActiveJwtInformationByUserId(userId)) {
+      log.info("기존 로그인 세션 무효화 - userId: {}", userId);
+      jwtRegistry.invalidateJwtInformationByUserId(userId);
+    }
 
     // 토큰 발급
     String accessToken = jwtTokenProvider.generateAccessToken(userDetails);
     String refreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
 
-    // jwtRegistry.register(refreshToken) 이후 구현
+    jwtRegistry.registerJwtInformation(new JwtInformation(
+        userDetails.getUserDto(),
+        accessToken,
+        refreshToken,
+        jwtTokenProvider.getExpiration(refreshToken)
+    ));
 
     // 리프레시 토큰 쿠키에 저장
     ResponseCookie refreshCookie = ResponseCookie
