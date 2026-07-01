@@ -1,44 +1,48 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.auth.LoginRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
+import com.sprint.mission.discodeit.dto.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.exception.user.InvalidPasswordException;
-import com.sprint.mission.discodeit.exception.user.UserNotFoundByUsernameException;
-import com.sprint.mission.discodeit.exception.userStatus.UserStatusNotFoundByUserIdException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.login.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.AuthService;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
-
 import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
-  private final UserStatusRepository userStatusRepository;
   private final UserMapper userMapper;
+  private final SessionRegistry sessionRegistry;
 
+  @PreAuthorize("hasRole('ADMIN')")
   @Transactional
   @Override
-  public UserDto login(LoginRequest request) {
-    User user = userRepository.findByUsername(request.username())
-        .orElseThrow(() -> new UserNotFoundByUsernameException(request.username()));
-    if (!user.getPassword().equals(request.password())) {
-      throw new InvalidPasswordException();
-    }
+  public UserDto updateRole(UserRoleUpdateRequest request) {
+    User user = userRepository.findById(request.userId())
+        .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
-    UserStatus userStatus = userStatusRepository.findByUser_Id(user.getId())
-        .orElseThrow(() -> new UserStatusNotFoundByUserIdException(user.getId()));
+    user.updateRole(request.newRole());
+    userRepository.save(user);
 
-    userStatus.updateConnection(Instant.now());
-
+    sessionRegistry.getAllPrincipals().stream()
+        .filter(principal -> principal instanceof DiscodeitUserDetails)
+        .map(principal -> (DiscodeitUserDetails) principal)
+        .filter(details -> details.getUserDto().id().equals(user.getId()))
+        .forEach(details -> {
+          sessionRegistry.getAllSessions(details, false)
+              .forEach(SessionInformation::expireNow);
+        });
+    
     return userMapper.toDto(user);
   }
 }

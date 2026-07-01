@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -35,11 +37,26 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest()
         .body(new ErrorResponse(
             ErrorCode.VALIDATION_ERROR.getStatus().value(),
-            ErrorCode.VALIDATION_ERROR.getClass().getSimpleName(),
+            ex.getClass().getSimpleName(),
             ErrorCode.VALIDATION_ERROR.getMessage(),
             details,
             Instant.now(),
             ErrorCode.VALIDATION_ERROR.name()
+        ));
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handle(AccessDeniedException ex) {
+    log.warn("적절한 권한 없음", ex);
+
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(new ErrorResponse(
+            ErrorCode.ACCESS_DENIED.getStatus().value(),
+            ex.getClass().getSimpleName(),
+            ErrorCode.ACCESS_DENIED.getMessage(),
+            Map.of(),
+            Instant.now(),
+            ErrorCode.ACCESS_DENIED.name()
         ));
   }
 
@@ -49,7 +66,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.internalServerError()
         .body(new ErrorResponse(
             ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value(),
-            ErrorCode.INTERNAL_SERVER_ERROR.getClass().getSimpleName(),
+            ex.getClass().getSimpleName(),
             ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
             Map.of(),
             Instant.now(),

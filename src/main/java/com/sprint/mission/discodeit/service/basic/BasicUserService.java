@@ -8,14 +8,21 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserPasswordAlreadyUsedException;
 import com.sprint.mission.discodeit.exception.user.UserUsernameAlreadyExistsException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.login.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +38,8 @@ public class BasicUserService implements UserService {
   private final BinaryContentStorage binaryContentStorage;
   private final BinaryContentRepository binaryContentRepository;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
+  private final SessionRegistry sessionRegistry;
 
   //create
   @Transactional
@@ -50,10 +59,11 @@ public class BasicUserService implements UserService {
     // 프로필 이미지 선택 생성
     BinaryContent profile = saveProfileImage(profileImage);
 
+    // 패스워드 encode
+    String encodedPassword = passwordEncoder.encode(request.password());
+
     // User 생성
-    User user = new User(request.username(), request.email(), request.password(), profile);
-    // UserStatus 자동 생성
-    user.initUserStatus();
+    User user = new User(request.username(), request.email(), encodedPassword, profile);
 
     userRepository.save(user);
 
@@ -66,21 +76,31 @@ public class BasicUserService implements UserService {
   @Transactional(readOnly = true)
   public UserDto findById(UUID userId) {
     User user = findUserOrThrow(userId);
-    return userMapper.toDto(user);
+    return toDtoWithOnlineStatus(user);
   }
 
   //Read all
   @Override
   @Transactional(readOnly = true)
   public List<UserDto> findAll() {
-    return userRepository.findAllWithDetails().stream()
-        .map(userMapper::toDto)
+    List<User> users = userRepository.findAllWithDetails();
+
+    Set<UUID> onlineUserIds = sessionRegistry.getAllPrincipals().stream()
+        .filter(principal -> principal instanceof DiscodeitUserDetails)
+        .map(principal -> (DiscodeitUserDetails) principal)
+        .filter(details -> !sessionRegistry.getAllSessions(details, false).isEmpty())
+        .map(details -> details.getUserDto().id())
+        .collect(Collectors.toSet());
+
+    return users.stream()
+        .map(user -> userMapper.toDto(user).withOnline(onlineUserIds.contains(user.getId())))
         .toList();
   }
 
   //Update
   @Transactional
   @Override
+  @PreAuthorize("#userId == authentication.principal.userDto.id")
   public UserDto update(UUID userId, UserUpdateRequest request,
       BinaryContentCreateRequest profileImage) {
     log.debug("유저 업데이트 시작 - userId: {}, newUsername: {}, newEmail: {}", userId,
@@ -101,6 +121,16 @@ public class BasicUserService implements UserService {
       throw new UserUsernameAlreadyExistsException(request.newUsername());
     }
 
+    // 사용중인 패스워드인지 검증 후 업데이트
+    if (request.newPassword() != null) {
+      if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+        log.warn("기존과 동일한 비밀번호 - userId: {}", userId);
+        throw new UserPasswordAlreadyUsedException();
+      }
+      String newEncodedPassword = passwordEncoder.encode(request.newPassword());
+      user.updatePassword(newEncodedPassword);
+    }
+
     if (profileImage != null) {
       if (user.getProfile() != null) {
         UUID oldProfileId = user.getProfile().getId();
@@ -116,9 +146,6 @@ public class BasicUserService implements UserService {
     if (request.newEmail() != null) {
       user.updateUserEmail(request.newEmail());
     }
-    if (request.newPassword() != null) {
-      user.updatePassword(request.newPassword());
-    }
 
     log.info("유저 업데이트 완료 - newUsername: {}, newEmail: {}", user.getUsername(), user.getEmail());
     return userMapper.toDto(user);
@@ -127,6 +154,7 @@ public class BasicUserService implements UserService {
   //Delete
   @Transactional
   @Override
+  @PreAuthorize("#userId == authentication.principal.userDto.id")
   public void delete(UUID userId) {
     log.debug("유저 삭제 시작 - userId: {}", userId);
     User user = findUserOrThrow(userId);
@@ -166,5 +194,17 @@ public class BasicUserService implements UserService {
     binaryContentStorage.put(profile.getId(), profileImage.bytes());
     log.debug("프로필 이미지 저장 완료 - profileId: {}", profile.getId());
     return profile;
+  }
+
+  private UserDto toDtoWithOnlineStatus(User user) {
+    return userMapper.toDto(user).withOnline(isOnline(user.getId()));
+  }
+
+  private boolean isOnline(UUID userId) {
+    return sessionRegistry.getAllPrincipals().stream()
+        .filter(principal -> principal instanceof DiscodeitUserDetails)
+        .map(principal -> (DiscodeitUserDetails) principal)
+        .filter(details -> details.getUserDto().id().equals(userId))
+        .anyMatch(details -> !sessionRegistry.getAllSessions(details, false).isEmpty());
   }
 }

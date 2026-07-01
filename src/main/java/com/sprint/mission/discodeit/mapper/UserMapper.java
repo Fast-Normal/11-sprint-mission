@@ -11,7 +11,6 @@ import org.mapstruct.ReportingPolicy;
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
-  @Mapping(target = "online", expression = "java(user.getUserStatus() != null && user.getUserStatus().isOnline())")
   @Mapping(target = "profile", source = "profile")
   UserDto toDto(User user);
 

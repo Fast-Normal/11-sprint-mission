@@ -10,6 +10,7 @@ import static org.mockito.BDDMockito.willDoNothing;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ErrorCode;
@@ -50,7 +51,8 @@ class UserServiceTest {
       // given
       UserCreateRequest request = new UserCreateRequest("woody", "woody@test.com", "pass1234");
 
-      UserDto expectedDto = new UserDto(UUID.randomUUID(), "woody", "woody@test.com", null, true);
+      UserDto expectedDto = new UserDto(UUID.randomUUID(), "woody", "woody@test.com", null, true,
+          Role.USER);
 
       given(userRepository.existsByEmail(request.email())).willReturn(false);
       given(userRepository.existsByUsername(request.username())).willReturn(false);
@@ -98,7 +100,7 @@ class UserServiceTest {
       User existingUser = new User("woody", "woody@test.com", "pass1234", null);
       UserUpdateRequest request = new UserUpdateRequest(
           "woody2", "woody2@test.com", "newpassword1");
-      UserDto expectedDto = new UserDto(userId, "woody2", "woody2@test.com", null, true);
+      UserDto expectedDto = new UserDto(userId, "woody2", "woody2@test.com", null, true, Role.USER);
 
       given(userRepository.findByIdWithDetails(userId)).willReturn(Optional.of(existingUser));
       given(userRepository.existsByEmail(request.newEmail())).willReturn(false);

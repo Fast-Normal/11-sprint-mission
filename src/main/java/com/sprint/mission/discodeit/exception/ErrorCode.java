@@ -10,6 +10,7 @@ public enum ErrorCode {
   USER_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "중복된 이메일입니다."),
   USER_USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "중복된 이름입니다."),
   INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
+  USER_PASSWORD_ALREADY_USED(HttpStatus.CONFLICT, "현재 비밀번호와 일치합니다."),
 
   // Channel
   CHANNEL_NOT_FOUND(HttpStatus.NOT_FOUND, "채널을 찾을 수 없습니다."),
@@ -28,10 +29,6 @@ public enum ErrorCode {
   READ_STATUS_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 ReadStatus입니다."),
   READ_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "ReadStatus를 찾을 수 없습니다."),
 
-  // UserStatus
-  USER_STATUS_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 UserStatus입니다."),
-  USER_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "유저 스테이터스가 없습니다."),
-
   // storage
   STORAGE_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
   STORAGE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
@@ -39,7 +36,12 @@ public enum ErrorCode {
 
   // 기타
   VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "유효성 검사 실패"),
-  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+
+  // AUTH
+  AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "인증에 실패했습니다."),
+  ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다.");
+
 
   private final HttpStatus status;
   private final String message;

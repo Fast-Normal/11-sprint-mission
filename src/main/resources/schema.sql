@@ -1,4 +1,4 @@
-CREATE TABLE binary_contents
+CREATE TABLE IF NOT EXISTS binary_contents
 (
     id           UUID PRIMARY KEY,
     created_at   timestamp with time zone NOT NULL,
@@ -17,17 +17,8 @@ CREATE TABLE iF NOT EXISTS users
     email      VARCHAR(100)             NOT NULL UNIQUE,
     password   VARCHAR(60)              NOT NULL,
     profile_id UUID,
+    role       VARCHAR(20)              NOT NULL,
     FOREIGN KEY (profile_id) REFERENCES binary_contents (id) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS user_statuses
-(
-    id             UUID PRIMARY KEY,
-    created_at     timestamp with time zone NOT NULL,
-    updated_at     timestamp with time zone,
-    user_id        UUID                     NOT NULL UNIQUE,
-    last_active_at timestamp with time zone NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS channels
@@ -73,4 +64,12 @@ CREATE TABLE IF NOT EXISTS read_statuses
     UNIQUE (user_id, channel_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
+);
+
+CREATE TABLE persistent_logins
+(
+    username  VARCHAR(64) NOT NULL,
+    series    VARCHAR(64) PRIMARY KEY,
+    token     VARCHAR(64) NOT NULL,
+    last_used TIMESTAMP   NOT NULL
 );
