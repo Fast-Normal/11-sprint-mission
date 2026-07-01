@@ -8,175 +8,142 @@ import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.JWTClaimsSet.Builder;
 import com.nimbusds.jwt.SignedJWT;
-import com.sprint.mission.discodeit.exception.auth.JwtExpiredException;
 import com.sprint.mission.discodeit.exception.auth.JwtSignatureException;
-import jakarta.annotation.PostConstruct;
+import com.sprint.mission.discodeit.exception.auth.RefreshTokenInvalidException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.Base64;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
+
+  public static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
   @Value("${jwt.key}")
   private String secretKey;
 
-  @Value("${jwt.access-token-expiration-minutes}")
-  private int accessTokenExpirationMinutes;
+  @Value("${jwt.access-token-expiration}")
+  private long accessTokenExpiration;
 
-  @Value("${jwt.refresh-token-expiration-minutes}")
-  private int refreshTokenExpirationMinutes;
+  @Value("${jwt.refresh-token-expiration}")
+  private long refreshTokenExpiration;
 
-  private String base64EncodedSecretKey;
+  // 토큰 발급 메서드
+  public String generateAccessToken(DiscodeitUserDetails userDetails) {
+    UUID userId = userDetails.getUserDto().id();
+    String role = userDetails.getUserDto().role().name();
 
-  @PostConstruct
-  public void init() {
-    this.base64EncodedSecretKey = encodeBase64SecretKey(secretKey);
+    JWTClaimsSet claims = new JWTClaimsSet.Builder()
+        .subject(userId.toString())
+        .issueTime(Date.from(Instant.now()))
+        .expirationTime(Date.from(Instant.now().plusSeconds(accessTokenExpiration)))
+        .claim("role", role)
+        .build();
+
+    return buildToken(claims);
   }
 
-  public String encodeBase64SecretKey(String secretKey) {
-    return Base64.getEncoder()
-        .encodeToString(secretKey.getBytes(StandardCharsets.UTF_8));
-  }
+  public String generateRefreshToken(DiscodeitUserDetails userDetails) {
+    UUID userId = userDetails.getUserDto().id();
 
-  // USER ID 기반 토큰 발급 메서드
-  public String generateAccessToken(UUID userId) {
-    Map<String, Object> claims = new HashMap<>();
-    claims.put("userId", userId.toString());
-    return generateToken(claims, userId.toString(),
-        getTokenExpiration(accessTokenExpirationMinutes));
-  }
+    JWTClaimsSet claims = new JWTClaimsSet.Builder()
+        .subject(userId.toString())
+        .issueTime(Date.from(Instant.now()))
+        .expirationTime(Date.from(Instant.now().plusSeconds(refreshTokenExpiration)))
+        .build();
 
-  public String generateRefreshToken(UUID userId) {
-    return generateToken(Map.of(), userId.toString(),
-        getTokenExpiration(refreshTokenExpirationMinutes));
-  }
-
-  // 테스트 전용 메서드 (만료시점 임의 지정)
-  public String generateAccessToken(UUID userId, int minutesOffset) {
-    Map<String, Object> claims = new HashMap<>();
-    claims.put("userId", userId.toString());
-    return generateToken(claims, userId.toString(), getTokenExpiration(minutesOffset));
+    return buildToken(claims);
   }
 
   // 헬퍼 메서드: 토큰 발급
-  private String generateToken(Map<String, Object> claims, String subject, Date expiration) {
+  private String buildToken(JWTClaimsSet claims) {
     try {
-      JWSSigner signer = createSinger();
+      byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+      JWSSigner signer = new MACSigner(keyBytes);
 
-      Builder builder = new JWTClaimsSet.Builder()
-          .subject(subject)
-          .issueTime(Calendar.getInstance().getTime())
-          .expirationTime(expiration);
-      claims.forEach(builder::claim);
-
-      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), builder.build());
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
       signedJWT.sign(signer);
 
       return signedJWT.serialize();
     } catch (JOSEException e) {
-      throw new JwtSignatureException(Map.of("subject", subject), e);
+      throw new JwtSignatureException(Map.of("reason", "JWT 서명 실패"), e);
     }
   }
 
-  // 토큰 검증/갱신
-  public Map<String, Object> getClaims(String jws) {
-    SignedJWT signedJWT;
+  // 유효성 검사
+  public boolean validateToken(String token) {
     try {
-      signedJWT = SignedJWT.parse(jws);
-    } catch (ParseException e) {
-      throw new JwtSignatureException(Map.of("reason", "malformed"), e);
-    }
+      SignedJWT signedJWT = SignedJWT.parse(token);
+      JWSVerifier verifier = new MACVerifier(secretKey.getBytes(StandardCharsets.UTF_8));
 
-    boolean verified;
-    try {
-      JWSVerifier verifier = createVerifier();
-      verified = signedJWT.verify(verifier);
-    } catch (JOSEException e) {
-      throw new JwtSignatureException(Map.of("reason", "verify-error"), e);
-    }
+      if (!signedJWT.verify(verifier)) {
+        log.warn("JWT 서명 검증 실패");
+        return false;
+      }
 
-    if (!verified) {
-      throw new JwtSignatureException(Map.of());
-    }
+      Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
+      if (expiration == null || expiration.before(new Date())) {
+        log.warn("JWT 만료됨: {}", expiration);
+        return false;
+      }
 
-    JWTClaimsSet claimsSet;
-    try {
-      claimsSet = signedJWT.getJWTClaimsSet();
-    } catch (ParseException e) {
-      throw new JwtSignatureException(Map.of("reason", "claims-parse-error"), e);
-    }
-
-    Date expiration = claimsSet.getExpirationTime();
-    if (expiration == null || expiration.before(new Date())) {
-      throw new JwtExpiredException(Map.of("expiredAt", expiration));
-    }
-    return claimsSet.getClaims();
-  }
-
-  // 만료 여부와 무관하게 위변조 여부만 확인
-  public boolean verifySignatureOnly(String jws) {
-    try {
-      SignedJWT signedJWT = SignedJWT.parse(jws);
-      JWSVerifier verifier = createVerifier();
-      return signedJWT.verify(verifier);
-    } catch (ParseException | JOSEException e) {
-      throw new JwtSignatureException(Map.of(), e);
-    }
-  }
-
-  public boolean isExpired(String jws) {
-    try {
-      getClaims(jws);
-      return false;
-    } catch (JwtExpiredException e) {
       return true;
+    } catch (ParseException | JOSEException e) {
+      log.warn("JWT 검증 중 오류: {}", e.getMessage());
+      return false;
+    }
+  }
+
+  public Instant getExpiration(String token) {
+    try {
+      return SignedJWT.parse(token)
+          .getJWTClaimsSet()
+          .getExpirationTime()
+          .toInstant();
+    } catch (ParseException e) {
+      throw new IllegalArgumentException("토큰 파싱 실패", e);
+    }
+  }
+
+  public String getSubject(String token) {
+    try {
+      return SignedJWT.parse(token).getJWTClaimsSet().getSubject();
+    } catch (ParseException e) {
+      throw new IllegalArgumentException("토큰 파싱 실패", e);
     }
   }
 
   // 갱신
   public String reissueAccessToken(String refreshToken) {
-    Map<String, Object> claims = getClaims(refreshToken);
-    UUID userId = UUID.fromString((String) claims.get("sub") != null
-        ? (String) claims.get("sub")
-        : extractSubject(refreshToken));
-    return generateAccessToken(userId);
-  }
-
-  private String extractSubject(String jws) {
-    try {
-      return SignedJWT.parse(jws).getJWTClaimsSet().getSubject();
-    } catch (ParseException e) {
-      throw new JwtSignatureException(Map.of("reason", "malformed"), e);
+    if (!validateToken(refreshToken)) {
+      throw new RefreshTokenInvalidException(Map.of());
     }
+
+    String subject = getSubject(refreshToken);
+
+    JWTClaimsSet claims = new JWTClaimsSet.Builder()
+        .subject(subject)
+        .issueTime(Date.from(Instant.now()))
+        .expirationTime(Date.from(Instant.now().plusSeconds(accessTokenExpiration)))
+        .build();
+
+    return buildToken(claims);
   }
 
   // 헬퍼 메서드
-
   private Date getTokenExpiration(int expirationMinutes) {
     Calendar calendar = Calendar.getInstance();
     calendar.add(Calendar.MINUTE, expirationMinutes);
     return calendar.getTime();
   }
-
-  private JWSSigner createSinger() throws JOSEException {
-    byte[] keyBytes = Base64.getDecoder().decode(base64EncodedSecretKey);
-    return new MACSigner(keyBytes);
-  }
-
-  private JWSVerifier createVerifier() throws JOSEException {
-    byte[] keyBytes = Base64.getDecoder().decode(base64EncodedSecretKey);
-    return new MACVerifier(keyBytes);
-  }
-
 
 }

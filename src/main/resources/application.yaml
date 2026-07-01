@@ -104,8 +104,8 @@ remember-me:
 
 jwt:
   key: ${JWT_SECRET_KEY}
-  access-token-expiration-minutes: 30
-  refresh-token-expiration-minutes: 10080 # 7일
+  access-token-expiration-minutes: 1800 # 30분
+  refresh-token-expiration-minutes: 604800 # 7일
 
 info:
   app:
