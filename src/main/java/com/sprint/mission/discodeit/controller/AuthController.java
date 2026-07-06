@@ -1,18 +1,23 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.auth.JwtDto;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserRoleUpdateRequest;
-import com.sprint.mission.discodeit.security.login.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
+import com.sprint.mission.discodeit.security.util.DiscodeitUserDetailService;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -23,24 +28,41 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
   private final AuthService authService;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final DiscodeitUserDetailService userDetailService;
 
-  @Operation(summary = "CSRF 토큰 발급")
-  @ApiResponse(responseCode = "203", description = "토큰 발급 성공")
-  @GetMapping("/csrf-token")
-  public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
-    csrfToken.getToken();
-    log.debug("CSRF 토큰 요청");
+  @Value("${jwt.refresh-token-expiration}")
+  private long refreshTokenExpiration;
 
-    return ResponseEntity.status(HttpStatus.NON_AUTHORITATIVE_INFORMATION).build();
+  @Value("${jwt.cookie.secure}")
+  private boolean cookieSecure;
+
+  @Operation(summary = "액세스 토큰 재발급")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "재발급 성공"),
+      @ApiResponse(responseCode = "401", description = "리프레시 토큰 유효하지 않음")
+  })
+  @PostMapping("/refresh")
+  public ResponseEntity<JwtDto> refresh(
+      @CookieValue(value = JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
+      HttpServletResponse response) {
+
+    JwtInformation info = authService.refresh(refreshToken);
+
+    ResponseCookie refreshCookie = ResponseCookie
+        .from(JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME, info.refreshToken())
+        .httpOnly(true)
+        .secure(cookieSecure)
+        .path("/")
+        .maxAge(refreshTokenExpiration)
+        .sameSite("Strict")
+        .build();
+
+    response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+    return ResponseEntity.ok(new JwtDto(info.userDto(), info.accessToken()));
   }
 
-  @Operation(summary = "세션 기반 현재 사용자 조회")
-  @ApiResponse(responseCode = "200", description = "사용자 조회 성공")
-  @GetMapping("/me")
-  public ResponseEntity<UserDto> getMe(@AuthenticationPrincipal DiscodeitUserDetails userDetails) {
-    UserDto userDto = userDetails.getUserDto();
-    return ResponseEntity.ok(userDto);
-  }
 
   @Operation(summary = "사용자 권한 수정 API")
   @ApiResponse(responseCode = "200", description = "사용자 권한 수정 완료")
@@ -48,5 +70,12 @@ public class AuthController {
   public ResponseEntity<UserDto> updateRole(@RequestBody UserRoleUpdateRequest request) {
     UserDto userDto = authService.updateRole(request);
     return ResponseEntity.ok(userDto);
+  }
+
+  @Operation(summary = "CSRF 토큰 발급")
+  @GetMapping("/csrf-token")
+  public ResponseEntity<Void> getCsrfToken() {
+    // JWT 방식에서는 아무것도 안 해도 됨
+    return ResponseEntity.ok().build();
   }
 }

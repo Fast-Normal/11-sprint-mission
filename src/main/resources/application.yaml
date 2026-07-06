@@ -99,8 +99,11 @@ admin:
   email: ${ADMIN_EMAIL:Admin@admin.com}
   password: ${ADMIN_PASSWORD}
 
-remember-me:
-  key: ${REMEMBER_ME_KEY}
+jwt:
+  key: ${JWT_SECRET_KEY}
+  access-token-expiration: 1800 # 30분
+  refresh-token-expiration: 604800 # 7일
+  max-active-sessions: 1
 
 info:
   app:

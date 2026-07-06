@@ -66,10 +66,9 @@ CREATE TABLE IF NOT EXISTS read_statuses
     FOREIGN KEY (channel_id) REFERENCES channels (id) ON DELETE CASCADE
 );
 
-CREATE TABLE persistent_logins
+CREATE TABLE refresh_tokens
 (
-    username  VARCHAR(64) NOT NULL,
-    series    VARCHAR(64) PRIMARY KEY,
-    token     VARCHAR(64) NOT NULL,
-    last_used TIMESTAMP   NOT NULL
+    user_id    UUID PRIMARY KEY,
+    token      VARCHAR(1000) NOT NULL,
+    expires_at TIMESTAMP     NOT NULL
 );
