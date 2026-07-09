@@ -57,7 +57,7 @@ public class BasicAuthService implements AuthService {
   @Override
   public JwtInformation refresh(String refreshToken) {
     if (!StringUtils.hasText(refreshToken) ||
-        !jwtTokenProvider.validateToken(refreshToken) ||
+        !jwtTokenProvider.isValidToken(refreshToken) ||
         !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
       throw new RefreshTokenInvalidException(Map.of("reason", "missing"));
     }
@@ -92,5 +92,13 @@ public class BasicAuthService implements AuthService {
     refreshTokenRepository.save(saved);
 
     return newInfo;
+  }
+
+  @Transactional
+  @Override
+  public void issueRefreshToken(UUID userId, String refreshToken, Instant expiresAt) {
+    refreshTokenRepository.findByUserId(userId)
+        .ifPresentOrElse(existing -> existing.rotate(refreshToken, expiresAt),
+            () -> refreshTokenRepository.save(new RefreshToken(userId, refreshToken, expiresAt)));
   }
 }

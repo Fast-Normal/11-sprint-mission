@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.security.jwt.handler;
 
-import com.sprint.mission.discodeit.security.jwt.InMemoryJwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +36,7 @@ public class JwtLogoutHandler implements LogoutHandler {
           String refreshToken = cookie.getValue();
 
           if (jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
-            invalidateByRefreshToken(refreshToken);
+            jwtRegistry.invalidateJwtInformationByRefreshToken(refreshToken);
             log.info("로그아웃 - Refresh Token 무효화 완료");
           } else {
             log.debug("로그아웃 - 이미 무효화된 Refresh Token");
@@ -53,12 +52,6 @@ public class JwtLogoutHandler implements LogoutHandler {
 
           response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
         });
-  }
-
-  private void invalidateByRefreshToken(String refreshToken) {
-    if (jwtRegistry instanceof InMemoryJwtRegistry registry) {
-      registry.invalidateJwtInformationByRefreshToken(refreshToken);
-    }
   }
 
 }

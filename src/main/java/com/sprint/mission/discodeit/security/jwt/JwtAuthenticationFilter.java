@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.security.jwt;
 
+import com.sprint.mission.discodeit.exception.auth.JwtExpiredException;
+import com.sprint.mission.discodeit.exception.auth.JwtSignatureException;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetailService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -45,30 +47,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String token = request.getHeader(AUTHORIZATION_HEADER).substring(BEARER_PREFIX.length());
 
     log.debug("JWT 필터 실행 - path: {}", request.getRequestURI());
-    log.debug("validateToken: {}", jwtTokenProvider.validateToken(token));
-    log.debug("hasActiveToken: {}", jwtRegistry.hasActiveJwtInformationByAccessToken(token));
 
     // 유효성 검사
-    if (jwtTokenProvider.validateToken(token) && jwtRegistry.hasActiveJwtInformationByAccessToken(
-        token)
-    ) {
-      // subject(userId) 추출
-      String subject = jwtTokenProvider.getSubject(token);
+    try {
+      jwtTokenProvider.validateTokenOrThrow(token);
 
-      // UserDetails 로드
-      UserDetails userDetails = userDetailsService.loadUserByUserId(UUID.fromString(subject));
+      if (jwtRegistry.hasActiveJwtInformationByAccessToken(
+          token)
+      ) {
+        // subject(userId) 추출
+        String subject = jwtTokenProvider.getSubject(token);
 
-      // Authentication 객체 생성
-      UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-      authentication.setDetails(
-          new WebAuthenticationDetailsSource().buildDetails(request));
+        // UserDetails 로드
+        UserDetails userDetails = userDetailsService.loadUserByUserId(UUID.fromString(subject));
 
-      // SecurityContext에 등록
-      SecurityContextHolder.getContext().setAuthentication(authentication);
-      log.debug("JWT 인증 성공 - userId: {}", subject);
-    } else {
-      log.debug("유효하지 않은 JWT - 인증 생략");
+        // Authentication 객체 생성
+        UsernamePasswordAuthenticationToken authentication =
+            new UsernamePasswordAuthenticationToken(userDetails, null,
+                userDetails.getAuthorities());
+        authentication.setDetails(
+            new WebAuthenticationDetailsSource().buildDetails(request));
+
+        // SecurityContext에 등록
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.debug("JWT 인증 성공 - userId: {}", subject);
+      } else {
+        log.debug("유효하지 않은 JWT - 인증 생략");
+        SecurityContextHolder.clearContext();
+      }
+    } catch (JwtExpiredException | JwtSignatureException e) {
+      log.debug("JWT 검증 실패: {}", e.getMessage());
+      request.setAttribute("exception", e);
       SecurityContextHolder.clearContext();
     }
 
