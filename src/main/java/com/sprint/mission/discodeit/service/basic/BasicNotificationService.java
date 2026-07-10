@@ -24,7 +24,7 @@ public class BasicNotificationService implements NotificationService {
 
   @Override
   public List<NotificationDto> findAllByReceiverId(UUID receiverId) {
-    return notificationRepository.findAllByReceiver_InOrderByCreatedAtDesc(receiverId)
+    return notificationRepository.findAllByReceiver_IdOrderByCreatedAtDesc(receiverId)
         .stream().map(notificationMapper::toDto)
         .toList();
   }

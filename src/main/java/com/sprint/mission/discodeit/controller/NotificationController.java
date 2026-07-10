@@ -38,7 +38,7 @@ public class NotificationController {
   public ResponseEntity<List<NotificationDto>> findAll(@AuthenticationPrincipal
   DiscodeitUserDetails userDetails) {
     UUID receiverId = userDetails.getUserDto().id();
-    List<NotificationDto> notifications = notificationService.findAllReceiverId(receiverId);
+    List<NotificationDto> notifications = notificationService.findAllByReceiverId(receiverId);
     return ResponseEntity.ok(notifications);
   }
 
