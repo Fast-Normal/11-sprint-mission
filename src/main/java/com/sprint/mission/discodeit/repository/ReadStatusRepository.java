@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
@@ -28,6 +29,18 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
       WHERE rs.channel.id IN :channelIds
       """)
   List<ReadStatus> findAllByChannelIds(List<UUID> channelIds);
+
+  // 메시지가 등록된 채널에서 알림을 켜둔 + 작성자 본인은 제외한 사용자만 골라서 알림 보내야함
+  @Query("""
+         SELECT rs.user.id FROM ReadStatus rs
+          WHERE rs.channel.id = :channelId
+           AND rs.notificationEnabled = true
+            AND rs.user.id <> :authorId
+      """)
+  List<UUID> findReceiverIdsByChannelIdAndNotificationEnabledTrueExcludingAuthor(
+      @Param("channelId") UUID channelId,
+      @Param("authorId") UUID authorId
+  );
 
   void deleteAllByChannel_Id(UUID channelId);
 

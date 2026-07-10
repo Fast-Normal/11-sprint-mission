@@ -3,7 +3,9 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.entity.RefreshToken;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.notification.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.exception.auth.RefreshTokenInvalidException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -19,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,7 @@ public class BasicAuthService implements AuthService {
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenRepository refreshTokenRepository;
   private final JwtRegistry jwtRegistry;
+  private final ApplicationEventPublisher eventPublisher;
 
   @PreAuthorize("hasRole('ADMIN')")
   @Transactional
@@ -42,6 +46,7 @@ public class BasicAuthService implements AuthService {
     User user = userRepository.findById(request.userId())
         .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
+    Role oldRole = user.getRole();
     user.updateRole(request.newRole());
     userRepository.save(user);
 
@@ -49,6 +54,12 @@ public class BasicAuthService implements AuthService {
     refreshTokenRepository.deleteByUserId(user.getId());
     jwtRegistry.invalidateJwtInformationByUserId(user.getId());
     log.info("권한 변경으로 인한 강제 로그아웃 - userId: {}", user.getId());
+
+    eventPublisher.publishEvent(new RoleUpdatedEvent(
+        user.getId(),
+        oldRole,
+        request.newRole()
+    ));
 
     return userMapper.toDto(user);
   }

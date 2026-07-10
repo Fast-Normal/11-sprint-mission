@@ -1,0 +1,12 @@
+package com.sprint.mission.discodeit.event.notification;
+
+import java.util.UUID;
+
+public record MessageCreatedEvent(
+    UUID channelId,
+    UUID authorId,
+    String content,
+    String channelName
+) {
+
+}
