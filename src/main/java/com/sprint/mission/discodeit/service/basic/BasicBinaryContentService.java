@@ -3,6 +3,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
+import com.sprint.mission.discodeit.event.binaryContent.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.binaryContent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.exception.binaryContent.FileSizeExceededException;
 import com.sprint.mission.discodeit.exception.binaryContent.InvalidContentTypeException;
@@ -12,11 +14,13 @@ import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -27,6 +31,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentMapper binaryContentMapper;
   private final BinaryContentStorage binaryContentStorage;
+  private final ApplicationEventPublisher eventPublisher;
 
   private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
@@ -55,7 +60,9 @@ public class BasicBinaryContentService implements BinaryContentService {
     );
 
     binaryContentRepository.save(binaryContent);
-    binaryContentStorage.put(binaryContent.getId(), request.bytes());
+    eventPublisher.publishEvent(
+        new BinaryContentCreatedEvent(binaryContent.getId(), request.bytes())
+    );
 
     log.info("첨부파일 업로드 완료 - binaryContentId: {}", binaryContent.getId());
     return binaryContentMapper.toDto(binaryContent);
@@ -98,6 +105,15 @@ public class BasicBinaryContentService implements BinaryContentService {
     Resource resource = binaryContentStorage.download(dto.id());
     log.info("파일 다운로드 완료 - binaryContentId: {}", binaryContentId);
     return resource;
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @Override
+  public BinaryContentDto updateStatus(UUID binaryContentId, BinaryContentStatus status) {
+    BinaryContent binaryContent = findBinaryContentOrThrow(binaryContentId);
+    binaryContent.updateStatus(status);
+    log.info("BinaryContent 상태 업데이트 - id: {}, status: {}", binaryContentId, status);
+    return binaryContentMapper.toDto(binaryContent);
   }
 
   private BinaryContent findBinaryContentOrThrow(UUID binaryContentId) {

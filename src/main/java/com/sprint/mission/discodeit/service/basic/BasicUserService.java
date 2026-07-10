@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.binaryContent.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserPasswordAlreadyUsedException;
@@ -18,6 +19,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class BasicUserService implements UserService {
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final JwtRegistry jwtRegistry;
+  private final ApplicationEventPublisher eventPublisher;
 
   //create
   @Transactional
@@ -180,7 +183,9 @@ public class BasicUserService implements UserService {
     );
 
     binaryContentRepository.save(profile);
-    binaryContentStorage.put(profile.getId(), profileImage.bytes());
+    eventPublisher.publishEvent(
+        new BinaryContentCreatedEvent(profile.getId(), profileImage.bytes())
+    );
     log.debug("프로필 이미지 저장 완료 - profileId: {}", profile.getId());
     return profile;
   }

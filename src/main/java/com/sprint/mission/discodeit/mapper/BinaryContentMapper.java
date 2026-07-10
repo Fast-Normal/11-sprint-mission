@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.mapper;
 
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +20,14 @@ public class BinaryContentMapper {
       return null;
     }
 
-    byte[] bytes;
-    try {
-      bytes = binaryContentStorage.get(binaryContent.getId()).readAllBytes();
-    } catch (IOException e) {
-      bytes = new byte[0];
+    byte[] bytes = new byte[0];
+
+    if (binaryContent.getStatus() == BinaryContentStatus.SUCCESS) {
+      try {
+        bytes = binaryContentStorage.get(binaryContent.getId()).readAllBytes();
+      } catch (IOException e) {
+        bytes = new byte[0];
+      }
     }
 
     return new BinaryContentDto(
