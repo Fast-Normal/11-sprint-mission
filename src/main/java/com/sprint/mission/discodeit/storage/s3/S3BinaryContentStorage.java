@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.storage.s3;
 
+import com.sprint.mission.discodeit.event.s3.S3UploadFailedEvent;
 import com.sprint.mission.discodeit.exception.storage.StorageDeleteFailedException;
 import com.sprint.mission.discodeit.exception.storage.StorageFileNotFoundException;
 import com.sprint.mission.discodeit.exception.storage.StorageSaveFailedException;
@@ -8,11 +9,17 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -31,33 +38,47 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
   private final S3Presigner presigner;
   private final String bucket;
   private final long presignedUrlExpiration;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   public S3BinaryContentStorage(
       @Value("${discodeit.storage.s3.bucket}") String bucket,
       @Value("${discodeit.storage.s3.presigned-url-expiration:600}") long presignedUrlExpiration,
       S3Client s3Client,
-      S3Presigner presigner) {
+      S3Presigner presigner, ApplicationEventPublisher applicationEventPublisher) {
     this.bucket = bucket;
     this.presignedUrlExpiration = presignedUrlExpiration;
     this.s3Client = s3Client;
     this.presigner = presigner;
+    this.applicationEventPublisher = applicationEventPublisher;
   }
 
+  @Retryable(
+      retryFor = SdkException.class,
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 500, multiplier = 2)
+  )
   @Override
   public UUID put(UUID id, byte[] bytes) {
-    try {
-      s3Client.putObject(
-          PutObjectRequest.builder()
-              .bucket(bucket)
-              .key(id.toString())
-              .build(),
-          RequestBody.fromBytes(bytes)
-      );
-      log.info("S3 업로드 완료 - id: {}", id);
-      return id;
-    } catch (Exception e) {
-      throw new StorageSaveFailedException(id);
-    }
+    s3Client.putObject(
+        PutObjectRequest.builder()
+            .bucket(bucket)
+            .key(id.toString())
+            .build(),
+        RequestBody.fromBytes(bytes)
+    );
+    log.info("S3 업로드 완료 - id: {}", id);
+    return id;
+  }
+
+  @Recover
+  public UUID recover(Exception e, UUID id, byte[] bytes) {
+    String requestId = MDC.get("requestId") != null ? MDC.get("requestId").toString() : null;
+    log.error("S3 업로드 재시도 모두 실패 - id: {}, requestId: {}, error: {}", id, requestId, e.getMessage());
+
+    applicationEventPublisher.publishEvent(
+        new S3UploadFailedEvent("BinaryContent S3 저장", requestId, id, e.getMessage())
+    );
+    throw new StorageSaveFailedException(id);
   }
 
   @Override
