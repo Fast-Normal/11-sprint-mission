@@ -46,7 +46,12 @@ public class NotificationRequiredEventListener {
         .orElseThrow(() -> new UserNotFoundException(event.authorId()));
 
     List<User> receivers = userRepository.findAllById(receiverIds);
-    String title = String.format("%s (#%s)", author.getUsername(), event.channelName());
+
+    // Private 채널은 채널명이 없으므로 괄호 생략
+    String title = (event.channelName() != null && !event.channelName().isBlank()) ?
+        String.format("%s (#%s)", author.getUsername(), event.channelName())
+        : author.getUsername();
+
     String content = truncate(event.content());
 
     List<Notification> notifications = receivers.stream()
