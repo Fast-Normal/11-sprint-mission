@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.event.s3;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+@Profile("!kafka")
 @Component
 @Slf4j
 public class S3UploadFailureNotifier {
