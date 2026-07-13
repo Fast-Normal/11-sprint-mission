@@ -41,6 +41,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'com.nimbusds:nimbus-jose-jwt:10.3'
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'

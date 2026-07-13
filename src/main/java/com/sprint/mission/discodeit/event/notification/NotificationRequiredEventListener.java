@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.event.notification;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -25,6 +28,7 @@ public class NotificationRequiredEventListener {
   private final ReadStatusRepository readStatusRepository;
   private final UserRepository userRepository;
   private final NotificationRepository notificationRepository;
+  private final CacheManager cacheManager;
 
   private static final int CONTENT_PREVIEW_LENGTH = 100;
 
@@ -59,6 +63,10 @@ public class NotificationRequiredEventListener {
         .toList();
 
     notificationRepository.saveAll(notifications);
+
+    // 알림 받은 유저들의 캐시만 선택적으로 무효화
+    evictNotificationsCacheForUsers(receiverIds);
+
     log.info("메시지 알림 생성 완료 - channelId: {}, 수신자 수: {}",
         event.channelId(), notifications.size());
   }
@@ -76,6 +84,10 @@ public class NotificationRequiredEventListener {
     String content = String.format("%s -> %s", event.oldRole(), event.newRole());
 
     notificationRepository.save(new Notification(user, title, content));
+
+    // 대상 유저 캐시 무효화
+    evictNotificationsCacheForUsers(List.of(event.userId()));
+
     log.info("권한 변경 알림 생성 완료 - userId: {}", event.userId());
   }
 
@@ -86,6 +98,13 @@ public class NotificationRequiredEventListener {
     return content.length() > CONTENT_PREVIEW_LENGTH
         ? content.substring(0, CONTENT_PREVIEW_LENGTH) + "..."
         : content;
+  }
+
+  private void evictNotificationsCacheForUsers(List<UUID> userIds) {
+    Cache cache = cacheManager.getCache(CacheConfig.NOTIFICATIONS);
+    if (cache != null) {
+      userIds.forEach(cache::evict);
+    }
   }
 
 }

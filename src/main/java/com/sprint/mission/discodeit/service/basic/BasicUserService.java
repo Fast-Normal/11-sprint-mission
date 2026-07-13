@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.binaryContent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
@@ -19,6 +20,8 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +47,7 @@ public class BasicUserService implements UserService {
   //create
   @Transactional
   @Override
+  @CacheEvict(value = CacheConfig.USERS, allEntries = true)
   public UserDto create(UserCreateRequest request, BinaryContentCreateRequest profileImage) {
     // 중복 이메일 검증
     log.debug("유저 생성 시작 - email: {}, username: {}", request.email(), request.username());
@@ -80,6 +84,7 @@ public class BasicUserService implements UserService {
   }
 
   //Read all
+  @Cacheable(cacheNames = "users", value = CacheConfig.USERS)
   @Override
   @Transactional(readOnly = true)
   public List<UserDto> findAll() {
@@ -90,6 +95,7 @@ public class BasicUserService implements UserService {
   }
 
   //Update
+  @CacheEvict(value = CacheConfig.USERS, allEntries = true)
   @Transactional
   @Override
   @PreAuthorize("#userId == authentication.principal.userDto.id")
@@ -144,6 +150,7 @@ public class BasicUserService implements UserService {
   }
 
   //Delete
+  @CacheEvict(value = CacheConfig.USERS, allEntries = true)
   @Transactional
   @Override
   @PreAuthorize("#userId == authentication.principal.userDto.id")

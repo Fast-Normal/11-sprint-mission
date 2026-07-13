@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.security.jwt.handler;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,6 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class JwtLogoutHandler implements LogoutHandler {
 
   private final JwtRegistry jwtRegistry;
+  private final CacheManager cacheManager;
 
   @Override
   public void logout(HttpServletRequest request, HttpServletResponse response,
@@ -37,6 +41,7 @@ public class JwtLogoutHandler implements LogoutHandler {
 
           if (jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
             jwtRegistry.invalidateJwtInformationByRefreshToken(refreshToken);
+            evictUserListCache();
             log.info("로그아웃 - Refresh Token 무효화 완료");
           } else {
             log.debug("로그아웃 - 이미 무효화된 Refresh Token");
@@ -52,6 +57,13 @@ public class JwtLogoutHandler implements LogoutHandler {
 
           response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
         });
+  }
+
+  private void evictUserListCache() {
+    Cache cache = cacheManager.getCache(CacheConfig.USERS);
+    if (cache != null) {
+      cache.clear();
+    }
   }
 
 }

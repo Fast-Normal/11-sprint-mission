@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.channel.ChannelDto;
 import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
@@ -23,6 +24,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +45,7 @@ public class BasicChannelService implements ChannelService {
   private final MessageRepository messageRepository;
   private final ChannelMapper channelMapper;
   private final UserRepository userRepository;
+  private final CacheManager cacheManager;
 
   //create public channel
   @Transactional
@@ -74,7 +80,11 @@ public class BasicChannelService implements ChannelService {
       ReadStatus readStatus = new ReadStatus(user, channel);
       readStatusRepository.save(readStatus);
     });
+
     log.info("프라이빗 채널 생성 완료 - channelId: {}", channel.getId());
+
+    //참여자별 채널 목록 캐시만 선택적으로 무효화
+    evictChannelsCacheForUsers(request.participantIds());
 
     return channelMapper.toDto(channel);
   }
@@ -97,6 +107,7 @@ public class BasicChannelService implements ChannelService {
         .toList();
   }
 
+  @Cacheable(cacheNames = "channels", value = CacheConfig.CHANNELS, key = "#userId")
   @Override
   @Transactional(readOnly = true)
   public List<ChannelDto> findAllByUserId(UUID userId) {
@@ -116,6 +127,7 @@ public class BasicChannelService implements ChannelService {
   @Transactional
   @Override
   @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+  @CacheEvict(value = CacheConfig.CHANNELS, allEntries = true)
   public ChannelDto update(UUID channelId, ChannelUpdateRequest request) {
     log.debug("채널 업데이트 시작 - channelId: {}", channelId);
     Channel channel = findChannelOrThrow(channelId);
@@ -137,6 +149,7 @@ public class BasicChannelService implements ChannelService {
   @Transactional
   @Override
   @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+  @CacheEvict(value = CacheConfig.CHANNELS, allEntries = true)
   public void delete(UUID channelId) {
     log.debug("채널 삭제 시작 - channelId: {}", channelId);
     findChannelOrThrow(channelId);
@@ -209,5 +222,12 @@ public class BasicChannelService implements ChannelService {
           return channelMapper.toDto(channel, participants, lastMessageAt);
         })
         .toList();
+  }
+
+  private void evictChannelsCacheForUsers(List<UUID> userIds) {
+    Cache cache = cacheManager.getCache(CacheConfig.CHANNELS);
+    if (cache != null) {
+      userIds.forEach(cache::evict);
+    }
   }
 }
