@@ -104,12 +104,4 @@ public class BasicAuthService implements AuthService {
 
     return newInfo;
   }
-
-  @Transactional
-  @Override
-  public void issueRefreshToken(UUID userId, String refreshToken, Instant expiresAt) {
-    refreshTokenRepository.findByUserId(userId)
-        .ifPresentOrElse(existing -> existing.rotate(refreshToken, expiresAt),
-            () -> refreshTokenRepository.save(new RefreshToken(userId, refreshToken, expiresAt)));
-  }
 }

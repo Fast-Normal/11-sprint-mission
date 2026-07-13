@@ -47,6 +47,14 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @Override
   public UUID put(UUID id, byte[] bytes) {
+    // 테스트용 지연 추가
+    try {
+      Thread.sleep(3000);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Thread interrupted while simulating delay", e);
+    }
+
     Path path = resolvePath(id);
     try (OutputStream os = Files.newOutputStream(path)) {
       os.write(bytes);

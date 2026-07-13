@@ -70,6 +70,9 @@ springdoc:
   default-produces-media-type: application/json
 
 management:
+  observations:
+    annotations:
+      enabled: true
   endpoint:
     info:
       env:

@@ -49,6 +49,7 @@ public class DiscodeitAuthenticationEntryPoint implements AuthenticationEntryPoi
 
     response.setStatus(errorCode.getStatus().value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setCharacterEncoding("UTF-8");
     response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
   }
 }

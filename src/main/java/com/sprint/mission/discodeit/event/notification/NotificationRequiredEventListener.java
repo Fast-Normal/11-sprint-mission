@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -26,7 +28,8 @@ public class NotificationRequiredEventListener {
 
   private static final int CONTENT_PREVIEW_LENGTH = 100;
 
-  @Transactional
+  @Async("eventTaskExecutor")
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void on(MessageCreatedEvent event) {
     log.debug("메시지 알림 생성 시작 - channelId: {}", event.channelId());
@@ -55,7 +58,8 @@ public class NotificationRequiredEventListener {
         event.channelId(), notifications.size());
   }
 
-  @Transactional
+  @Async("eventTaskExecutor")
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void on(RoleUpdatedEvent event) {
     log.debug("권한 변경 알림 생성 시작 - userId: {}", event.userId());
