@@ -8,13 +8,13 @@ public record UserDto(
     UUID id,
     String username,
     String email,
-    BinaryContentDto profile,
+    UUID profileId,
     boolean online,
     Role role
     // password 없음
 ) {
 
   public UserDto withOnline(boolean online) {
-    return new UserDto(id, username, email, profile, online, role);
+    return new UserDto(id, username, email, profileId, online, role);
   }
 }

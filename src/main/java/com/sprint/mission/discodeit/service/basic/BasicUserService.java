@@ -18,6 +18,8 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -91,7 +93,7 @@ public class BasicUserService implements UserService {
     return userRepository.findAllWithDetails().stream()
         .map(user -> userMapper.toDto(user)
             .withOnline(isOnline(user.getId())))
-        .toList();
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   //Update
@@ -189,12 +191,12 @@ public class BasicUserService implements UserService {
         profileImage.bytes()
     );
 
-    binaryContentRepository.save(profile);
+    BinaryContent saved = binaryContentRepository.save(profile);
     eventPublisher.publishEvent(
-        new BinaryContentCreatedEvent(profile.getId(), profileImage.bytes())
+        new BinaryContentCreatedEvent(saved.getId(), profileImage.bytes())
     );
-    log.debug("프로필 이미지 저장 완료 - profileId: {}", profile.getId());
-    return profile;
+    log.debug("프로필 이미지 저장 완료 - profileId: {}", saved.getId());
+    return saved;
   }
 
   private boolean isOnline(UUID userId) {

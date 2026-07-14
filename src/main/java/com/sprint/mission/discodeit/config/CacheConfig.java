@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +29,8 @@ public class CacheConfig {
 
     PolymorphicTypeValidator validator = BasicPolymorphicTypeValidator.builder()
         .allowIfSubType("com.sprint.mission.discodeit")
+        .allowIfSubType("java.")
+        .allowIfSubTypeIsArray()
         .build();
 
     redisObjectMapper.activateDefaultTyping(

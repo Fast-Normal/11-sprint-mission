@@ -11,7 +11,7 @@ import org.mapstruct.ReportingPolicy;
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
-  @Mapping(target = "profile", source = "profile")
+  @Mapping(target = "profileId", source = "profile.id")
   UserDto toDto(User user);
 
 }

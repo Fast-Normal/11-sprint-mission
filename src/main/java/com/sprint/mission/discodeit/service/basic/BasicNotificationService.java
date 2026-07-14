@@ -5,8 +5,10 @@ import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundE
 import com.sprint.mission.discodeit.mapper.NotificationMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.service.NotificationService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,7 +30,7 @@ public class BasicNotificationService implements NotificationService {
   public List<NotificationDto> findAllByReceiverId(UUID receiverId) {
     return notificationRepository.findAllByReceiver_IdOrderByCreatedAtDesc(receiverId)
         .stream().map(notificationMapper::toDto)
-        .toList();
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Transactional
