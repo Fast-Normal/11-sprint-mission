@@ -47,6 +47,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @Override
   public UUID put(UUID id, byte[] bytes) {
+
     Path path = resolvePath(id);
     try (OutputStream os = Files.newOutputStream(path)) {
       os.write(bytes);

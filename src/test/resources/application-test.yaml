@@ -30,6 +30,10 @@ aws:
   s3:
     bucket: ${AWS_S3_BUCKET:test-bucket}
 
+jwt:
+  cookie:
+    secure: false
+
 discodeit:
   storage:
     type: ${STORAGE_TYPE:local}

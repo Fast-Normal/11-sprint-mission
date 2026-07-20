@@ -9,13 +9,12 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.sprint.mission.discodeit.exception.auth.JwtExpiredException;
 import com.sprint.mission.discodeit.exception.auth.JwtSignatureException;
-import com.sprint.mission.discodeit.exception.auth.RefreshTokenInvalidException;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetails;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -81,26 +80,30 @@ public class JwtTokenProvider {
   }
 
   // 유효성 검사
-  public boolean validateToken(String token) {
+  public boolean isValidToken(String token) {
+    try {
+      validateTokenOrThrow(token);
+      return true;
+    } catch (JwtExpiredException | JwtSignatureException e) {
+      return false;
+    }
+  }
+
+  public void validateTokenOrThrow(String token) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
       JWSVerifier verifier = new MACVerifier(secretKey.getBytes(StandardCharsets.UTF_8));
 
       if (!signedJWT.verify(verifier)) {
-        log.warn("JWT 서명 검증 실패");
-        return false;
+        throw new JwtSignatureException(Map.of("reason", "서명 검증 실패"));
       }
 
       Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
       if (expiration == null || expiration.before(new Date())) {
-        log.warn("JWT 만료됨: {}", expiration);
-        return false;
+        throw new JwtExpiredException(Map.of("reason", "토큰 만료", "expiredAt", expiration));
       }
-
-      return true;
     } catch (ParseException | JOSEException e) {
-      log.warn("JWT 검증 중 오류: {}", e.getMessage());
-      return false;
+      throw new JwtSignatureException(Map.of("reason", "JWT 파싱/서명 오류"), e);
     }
   }
 
@@ -121,30 +124,6 @@ public class JwtTokenProvider {
     } catch (ParseException e) {
       throw new IllegalArgumentException("토큰 파싱 실패", e);
     }
-  }
-
-  // 갱신
-  public String reissueAccessToken(String refreshToken) {
-    if (!validateToken(refreshToken)) {
-      throw new RefreshTokenInvalidException(Map.of());
-    }
-
-    String subject = getSubject(refreshToken);
-
-    JWTClaimsSet claims = new JWTClaimsSet.Builder()
-        .subject(subject)
-        .issueTime(Date.from(Instant.now()))
-        .expirationTime(Date.from(Instant.now().plusSeconds(accessTokenExpiration)))
-        .build();
-
-    return buildToken(claims);
-  }
-
-  // 헬퍼 메서드
-  private Date getTokenExpiration(int expirationMinutes) {
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.MINUTE, expirationMinutes);
-    return calendar.getTime();
   }
 
 }

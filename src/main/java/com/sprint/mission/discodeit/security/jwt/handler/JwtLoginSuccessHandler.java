@@ -1,19 +1,24 @@
 package com.sprint.mission.discodeit.security.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.auth.JwtDto;
 import com.sprint.mission.discodeit.security.jwt.JwtInformation;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.util.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
+import com.sprint.mission.discodeit.service.RefreshTokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -28,6 +33,8 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
   private final ObjectMapper objectMapper;
   private final JwtTokenProvider jwtTokenProvider;
   private final JwtRegistry jwtRegistry;
+  private final RefreshTokenService refreshTokenService;
+  private final CacheManager cacheManager;
 
   @Value("${jwt.refresh-token-expiration}")
   private int refreshTokenExpiration;
@@ -53,13 +60,16 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     // 토큰 발급
     String accessToken = jwtTokenProvider.generateAccessToken(userDetails);
     String refreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
+    Instant refreshExpiry = jwtTokenProvider.getExpiration(refreshToken);
 
     jwtRegistry.registerJwtInformation(new JwtInformation(
         userDetails.getUserDto(),
         accessToken,
         refreshToken,
-        jwtTokenProvider.getExpiration(refreshToken)
+        refreshExpiry
     ));
+
+    refreshTokenService.issueRefreshToken(userId, refreshToken, refreshExpiry);
 
     // 리프레시 토큰 쿠키에 저장
     ResponseCookie refreshCookie = ResponseCookie
@@ -71,6 +81,8 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
         .sameSite("Strict")
         .build();
 
+    evictUserListCache();
+
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     // 액세스 토큰 응답 바디에 포함
@@ -80,6 +92,14 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     JwtDto jwtDto = new JwtDto(userDetails.getUserDto(), accessToken);
     response.getWriter().write(objectMapper.writeValueAsString(jwtDto));
+  }
+
+  private void evictUserListCache() {
+    Cache cache = cacheManager.getCache(CacheConfig.USERS);
+    if (cache != null) {
+      cache.clear();
+      log.debug("로그인으로 인한 userList 캐시 무효화");
+    }
   }
 
 }
