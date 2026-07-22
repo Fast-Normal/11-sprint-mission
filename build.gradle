@@ -10,7 +10,7 @@ springBoot {
 }
 
 group = 'com.sprint.mission'
-version = '2.2-M11'
+version = '3.0-M12'
 description = 'Sprint mission'
 
 java {
