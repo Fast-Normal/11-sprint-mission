@@ -51,6 +51,7 @@ public class BasicChannelService implements ChannelService {
   @Transactional
   @Override
   @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+  @CacheEvict(value = CacheConfig.CHANNELS, allEntries = true)
   public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
     // 퍼블릭 채널 생성
     log.debug("퍼블릭 채널 생성 시작 - channelName: {}", request.name());
@@ -107,7 +108,7 @@ public class BasicChannelService implements ChannelService {
         .toList();
   }
 
-  @Cacheable(cacheNames = "channels", value = CacheConfig.CHANNELS, key = "#userId")
+  @Cacheable(cacheNames = CacheConfig.CHANNELS, key = "#userId")
   @Override
   @Transactional(readOnly = true)
   public List<ChannelDto> findAllByUserId(UUID userId) {

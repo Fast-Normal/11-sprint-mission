@@ -7,12 +7,14 @@ import com.sprint.mission.discodeit.event.notification.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.event.s3.S3UploadFailedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+@Profile("kafka")
 @Slf4j
 @RequiredArgsConstructor
 @Component
