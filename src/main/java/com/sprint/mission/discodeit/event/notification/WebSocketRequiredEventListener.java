@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.event.notification;
 
-import com.sprint.mission.discodeit.dto.message.MessageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
