@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.redis.RedisLockProvider.RedisLockAcquisitionException;
 import com.sprint.mission.discodeit.security.jwt.JwtInformation;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
-import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -22,11 +21,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class RedisJwtRegistry implements JwtRegistry {
 
   private static final String USER_JWT_KEY_PREFIX = "jwt:user:";
-  private static final String ACCESS_TOKEN_INDEX_KEY = "jwt:access_tokens";
-  private static final String REFRESH_TOKEN_INDEX_KEY = "jwt:refresh_tokens";
+  private static final String ACCESS_TOKEN_INDEX_PREFIX = "jwt:index:access:";
+  private static final String REFRESH_TOKEN_INDEX_PREFIX = "jwt:index:refresh:";
 
   private final int maxActiveJwtCount;
-  private final JwtTokenProvider jwtTokenProvider;
   private final RedisTemplate<String, Object> redisTemplate;
   private final RedisLockProvider redisLockProvider;
 
@@ -41,7 +39,7 @@ public class RedisJwtRegistry implements JwtRegistry {
     try {
       Long currentSize = redisTemplate.opsForList().size(userKey);
 
-      while (currentSize != null && currentSize <= maxActiveJwtCount) {
+      while (currentSize != null && currentSize >= maxActiveJwtCount) {
         Object oldest = redisTemplate.opsForList().leftPop(userKey);
         if (oldest instanceof JwtInformation oldestInfo) {
           removeTokenIndex(oldestInfo.accessToken(), oldestInfo.refreshToken());
@@ -55,7 +53,8 @@ public class RedisJwtRegistry implements JwtRegistry {
           jwtInformation.expiration().getEpochSecond() - Instant.now().getEpochSecond());
       redisTemplate.expire(userKey, Duration.ofSeconds(ttlSeconds));
 
-      addTokenIndex(jwtInformation.accessToken(), jwtInformation.refreshToken(), ttlSeconds);
+      addTokenIndex(jwtInformation.accessToken(), jwtInformation.refreshToken(), userId,
+          ttlSeconds);
     } finally {
       redisLockProvider.releaseLock(userId.toString());
     }
@@ -79,9 +78,28 @@ public class RedisJwtRegistry implements JwtRegistry {
 
   @Override
   public void invalidateJwtInformationByRefreshToken(String refreshToken) {
-    String userIdStr = (String) redisTemplate.opsForValue().get("jwt:refresh:" + refreshToken);
-    if (userIdStr == null) {
+    Object userIdObj = redisTemplate.opsForValue().get(REFRESH_TOKEN_INDEX_PREFIX + refreshToken);
+    if (userIdObj == null) {
       return;
+    }
+
+    UUID userId = UUID.fromString(userIdObj.toString());
+    String userKey = getUserKey(userId);
+
+    redisLockProvider.acquireLock(userId.toString());
+    try {
+      List<Object> tokens = redisTemplate.opsForList().range(userKey, 0, -1);
+      if (tokens != null) {
+        for (Object t : tokens) {
+          if (t instanceof JwtInformation info && info.refreshToken().equals(refreshToken)) {
+            redisTemplate.opsForList().remove(userKey, 1, info);
+            removeTokenIndex(info.accessToken(), info.refreshToken());
+            break;
+          }
+        }
+      }
+    } finally {
+      redisLockProvider.releaseLock(userId.toString());
     }
   }
 
@@ -93,14 +111,12 @@ public class RedisJwtRegistry implements JwtRegistry {
 
   @Override
   public boolean hasActiveJwtInformationByAccessToken(String accessToken) {
-    return Boolean.TRUE.equals(
-        redisTemplate.opsForSet().isMember(ACCESS_TOKEN_INDEX_KEY, accessToken));
+    return redisTemplate.hasKey(ACCESS_TOKEN_INDEX_PREFIX + accessToken);
   }
 
   @Override
   public boolean hasActiveJwtInformationByRefreshToken(String refreshToken) {
-    return Boolean.TRUE.equals(
-        redisTemplate.opsForSet().isMember(REFRESH_TOKEN_INDEX_KEY, refreshToken));
+    return redisTemplate.hasKey(REFRESH_TOKEN_INDEX_PREFIX + refreshToken);
   }
 
   @Retryable(retryFor = RedisLockAcquisitionException.class, maxAttempts = 10, backoff = @Backoff(delay = 100, multiplier = 2))
@@ -119,10 +135,11 @@ public class RedisJwtRegistry implements JwtRegistry {
               && info.refreshToken().equals(oldRefreshToken)) {
             removeTokenIndex(info.accessToken(), info.refreshToken());
             redisTemplate.opsForList().set(userKey, i, newJwtInformation);
+
             long ttlSeconds = Math.max(1,
                 newJwtInformation.expiration().getEpochSecond() - Instant.now().getEpochSecond());
             addTokenIndex(newJwtInformation.accessToken(), newJwtInformation.refreshToken(),
-                ttlSeconds);
+                userId, ttlSeconds);
             redisTemplate.expire(userKey, Duration.ofSeconds(ttlSeconds));
             break;
           }
@@ -145,13 +162,16 @@ public class RedisJwtRegistry implements JwtRegistry {
   }
 
   private void removeTokenIndex(String accessToken, String refreshToken) {
-    redisTemplate.opsForSet().remove(ACCESS_TOKEN_INDEX_KEY, accessToken);
-    redisTemplate.opsForSet().remove(REFRESH_TOKEN_INDEX_KEY, refreshToken);
+    redisTemplate.delete(ACCESS_TOKEN_INDEX_PREFIX + accessToken);
+    redisTemplate.delete(REFRESH_TOKEN_INDEX_PREFIX + refreshToken);
   }
 
-  private void addTokenIndex(String accessToken, String refreshToken, long ttlSeconds) {
-    redisTemplate.opsForSet().add(ACCESS_TOKEN_INDEX_KEY, accessToken);
-    redisTemplate.opsForSet().add(REFRESH_TOKEN_INDEX_KEY, refreshToken);
+  private void addTokenIndex(String accessToken, String refreshToken, UUID userId,
+      long ttlSeconds) {
+    redisTemplate.opsForValue()
+        .set(ACCESS_TOKEN_INDEX_PREFIX + accessToken, userId, Duration.ofSeconds(ttlSeconds));
+    redisTemplate.opsForValue()
+        .set(REFRESH_TOKEN_INDEX_PREFIX + refreshToken, userId, Duration.ofSeconds(ttlSeconds));
   }
 
 

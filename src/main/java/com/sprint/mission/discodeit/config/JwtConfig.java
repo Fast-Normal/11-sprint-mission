@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.config;
 import com.sprint.mission.discodeit.redis.RedisJwtRegistry;
 import com.sprint.mission.discodeit.redis.RedisLockProvider;
 import com.sprint.mission.discodeit.security.jwt.InMemoryJwtRegistry;
-import com.sprint.mission.discodeit.security.jwt.JwtInformation;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,9 +28,9 @@ public class JwtConfig {
   @Profile("redis")
   public JwtRegistry redisJwtRegistry(
       JwtTokenProvider jwtTokenProvider,
-      @Qualifier("jwtRedisTemplate") RedisTemplate<String, JwtInformation> redisTemplate,
+      @Qualifier("jwtRedisTemplate") RedisTemplate<String, Object> redisTemplate,
       RedisLockProvider redisLockProvider) {
-    return new RedisJwtRegistry(maxActiveJwtCount, jwtTokenProvider, redisTemplate,
+    return new RedisJwtRegistry(maxActiveJwtCount, redisTemplate,
         redisLockProvider);
 
   }
