@@ -10,6 +10,9 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.channel.ChannelCreatedEvent;
+import com.sprint.mission.discodeit.event.channel.ChannelDeletedEvent;
+import com.sprint.mission.discodeit.event.channel.ChannelUpdatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateDeniedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -28,6 +31,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +50,7 @@ public class BasicChannelService implements ChannelService {
   private final ChannelMapper channelMapper;
   private final UserRepository userRepository;
   private final CacheManager cacheManager;
+  private final ApplicationEventPublisher eventPublisher;
 
   //create public channel
   @Transactional
@@ -57,8 +62,10 @@ public class BasicChannelService implements ChannelService {
     log.debug("퍼블릭 채널 생성 시작 - channelName: {}", request.name());
     Channel channel = new Channel(ChannelType.PUBLIC, request.name(), request.description());
     channelRepository.save(channel);
+    ChannelDto dto = channelMapper.toDto(channel);
+    eventPublisher.publishEvent(new ChannelCreatedEvent(dto));
     log.info("퍼블릭 채널 생성 완료 - channelId: {}", channel.getId());
-    return channelMapper.toDto(channel);
+    return dto;
   }
 
   //create private channel
@@ -86,8 +93,10 @@ public class BasicChannelService implements ChannelService {
 
     //참여자별 채널 목록 캐시만 선택적으로 무효화
     evictChannelsCacheForUsers(request.participantIds());
+    ChannelDto dto = channelMapper.toDto(channel);
+    eventPublisher.publishEvent(new ChannelCreatedEvent(dto, request.participantIds()));
 
-    return channelMapper.toDto(channel);
+    return dto;
   }
 
 
@@ -142,8 +151,10 @@ public class BasicChannelService implements ChannelService {
     channel.updateChannelDescription(request.newDescription());
     log.info("채널 업데이트 완료 - channelId: {}, newName: {}", channel.getId(),
         channel.getName());
+    ChannelDto dto = channelMapper.toDto(channel);
+    eventPublisher.publishEvent(new ChannelUpdatedEvent(dto));
 
-    return channelMapper.toDto(channel);
+    return dto;
   }
 
   //delete
@@ -153,8 +164,12 @@ public class BasicChannelService implements ChannelService {
   @CacheEvict(value = CacheConfig.CHANNELS, allEntries = true)
   public void delete(UUID channelId) {
     log.debug("채널 삭제 시작 - channelId: {}", channelId);
-    findChannelOrThrow(channelId);
+    Channel channel = findChannelOrThrow(channelId);
+    List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
+        ? findParticipants(channel).stream().map(User::getId).toList()
+        : List.of();
     channelRepository.deleteById(channelId); // Message, ReadStatus cascade로 자동 삭제
+    eventPublisher.publishEvent(new ChannelDeletedEvent(channelId, participantIds));
     log.info("채널 삭제 완료 - channelId: {}", channelId);
   }
 
