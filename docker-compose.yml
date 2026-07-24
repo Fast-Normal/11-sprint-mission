@@ -14,7 +14,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: discodeit-app
+    deploy:
+      replicas: 3
     env_file:
       - .env
     environment:

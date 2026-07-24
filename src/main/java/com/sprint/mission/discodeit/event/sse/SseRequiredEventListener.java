@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.event.user.UserUpdatedEvent;
 import com.sprint.mission.discodeit.service.SseService;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -21,12 +22,12 @@ public class SseRequiredEventListener {
 
   private final SseService sseService;
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @EventListener
   public void on(NotificationCreatedEvent event) {
     sseService.send(Set.of(event.data().receiverId()), "notifications.created", event.data());
   }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @EventListener
   public void on(BinaryContentUpdatedEvent event) {
     sseService.send(Set.of(event.ownerId()), "binaryContents.updated", event.data());
   }

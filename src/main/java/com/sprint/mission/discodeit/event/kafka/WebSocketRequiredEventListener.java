@@ -1,5 +1,6 @@
-package com.sprint.mission.discodeit.event.notification;
+package com.sprint.mission.discodeit.event.kafka;
 
+import com.sprint.mission.discodeit.event.notification.MessageCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
